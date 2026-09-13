@@ -1,10 +1,11 @@
 /**
  * app.js - Controlador Principal de la Aplicación de Lógica Simbólica
- * Orquesta la interfaz, navegación, estados de sesión, constructor visual,
- * proceso inverso, generadores aleatorios, tablas de verdad y árbol sintáctico.
+ * Gestiona los 3 perfiles (Admin, Profesor, Estudiante), navegación segura,
+ * constructor visual, proceso inverso, generadores aleatorios integrados,
+ * tablas de verdad y árbol sintáctico.
  */
 
-import { dbService } from './storage.js';
+import { dbService, PROFILES } from './storage.js';
 import { FBFParser, NOTATION_MODES, NOTATION_SYMBOLS, OPERATORS } from './logic/ast.js';
 import { TruthTableEngine } from './logic/truthTable.js';
 import { NaturalLanguageTranslator } from './logic/naturalLanguage.js';
@@ -13,6 +14,7 @@ import { RandomGenerators } from './logic/generators.js';
 // Estado global de la aplicación
 const AppState = {
   currentUser: null,
+  selectedProfileId: 'estudiante',
   currentNotation: NOTATION_MODES.STANDARD,
   theme: 'dark',
 
@@ -20,9 +22,9 @@ const AppState = {
   builderAtomics: [
     { name: 'p', text: 'estudio para el examen' },
     { name: 'q', text: 'apruebo la materia de lógica' },
-    { name: 'r', text: 'obtengo la beca universitaria' }
+    { name: 'r', text: 'obtengo una calificación sobresaliente' }
   ],
-  builderTokens: [], // Array de objetos { type: 'var'|'op'|'paren', value: 'p'|'AND'|'(' }
+  builderTokens: [], // Array de { type: 'var'|'op'|'paren', value: string }
 
   // Estado del Proceso Inverso
   inverseAst: null,
@@ -50,7 +52,7 @@ function showToast(message, type = 'info') {
     toast.style.transform = 'translateY(10px)';
     toast.style.transition = 'all 0.3s ease';
     setTimeout(() => toast.remove(), 300);
-  }, 4200);
+  }, 4000);
 }
 
 // =============================================================================
@@ -84,6 +86,7 @@ function updateNotationUI() {
     AppState.currentNotation = settings.forcedNotation;
     if (notationSelect) {
       notationSelect.value = settings.forcedNotation;
+      // Solo el administrador puede modificar la notación si está fijada
       notationSelect.disabled = (AppState.currentUser?.role !== 'admin');
     }
     lockedBadge?.classList.remove('hidden');
@@ -117,7 +120,7 @@ function initNotationEvents() {
 }
 
 // =============================================================================
-// GESTIÓN DE AUTENTICACIÓN Y SESIONES
+// GESTIÓN DE AUTENTICACIÓN SIMPLIFICADA (ADMIN, PROFESOR, ESTUDIANTE)
 // =============================================================================
 function initAuth() {
   const authModal = document.getElementById('auth-modal');
@@ -126,177 +129,83 @@ function initAuth() {
   if (session) {
     loginSuccess(session);
   } else {
-    openAuthModal('login');
+    openAuthModal();
   }
 
-  // Pestañas del modal de autenticación
-  const authTabBtns = document.querySelectorAll('[data-auth-mode]');
-  authTabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      authTabBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const mode = btn.getAttribute('data-auth-mode');
-      showAuthSubform(mode);
+  // Selección de tarjetas de perfil
+  const profileCards = document.querySelectorAll('.profile-card');
+  profileCards.forEach(card => {
+    card.addEventListener('click', () => {
+      profileCards.forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      AppState.selectedProfileId = card.getAttribute('data-profile-id');
+      updateProfileFormUI();
     });
   });
 
-  // Formulario Login
+  // Formulario de login
   document.getElementById('form-login')?.addEventListener('submit', (e) => {
     e.preventDefault();
-    const userVal = document.getElementById('login-username').value;
-    const passVal = document.getElementById('login-password').value;
+    const profileId = AppState.selectedProfileId;
+    const passwordInput = document.getElementById('login-password');
+    const password = passwordInput ? passwordInput.value : '';
 
-    const res = dbService.login(userVal, passVal);
+    const res = dbService.login(profileId, password);
     if (res.success) {
-      showToast(`¡Bienvenido de nuevo, ${res.session.username}!`, 'success');
+      showToast(`¡Bienvenido, ${res.session.username}!`, 'success');
       loginSuccess(res.session);
       authModal.classList.remove('active');
+      if (passwordInput) passwordInput.value = '';
     } else {
       showToast(res.message, 'error');
     }
   });
 
-  // Formulario Registro (Crear Perfil con validación de capacidad)
-  document.getElementById('form-register')?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const userVal = document.getElementById('register-username').value;
-    const passVal = document.getElementById('register-password').value;
-    const confirmVal = document.getElementById('register-confirm-password').value;
-
-    if (passVal !== confirmVal) {
-      showToast('Las contraseñas no coinciden. Verifíquelas.', 'error');
-      return;
-    }
-
-    const res = dbService.registerUser(userVal, passVal);
-    if (res.success) {
-      showToast('Perfil creado con éxito. Ahora puedes iniciar sesión.', 'success');
-      // Limpiar campos y pasar a login
-      document.getElementById('form-register').reset();
-      openAuthModal('login');
-    } else {
-      showToast(res.message, 'error');
-      if (res.isCapacityError) {
-        document.getElementById('register-capacity-warning')?.classList.remove('hidden');
-      }
-    }
-  });
-
-  // Formulario Eliminar Perfil
-  document.getElementById('form-delete-profile')?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const targetUser = document.getElementById('delete-user-select').value;
-    const passVal = document.getElementById('delete-user-password').value;
-
-    if (!targetUser) {
-      showToast('Por favor selecciona un perfil para eliminar.', 'error');
-      return;
-    }
-
-    const res = dbService.deleteUser(targetUser, passVal);
-    if (res.success) {
-      showToast(res.message, 'success');
-      document.getElementById('form-delete-profile').reset();
-      updateDeleteUserSelect();
-      updateAdminDashboard();
-      openAuthModal('login');
-    } else {
-      showToast(res.message, 'error');
-    }
-  });
-
-  // Logout
+  // Botón de Cerrar Sesión (con corrección para resetear a Constructor Visual)
   document.getElementById('btn-logout')?.addEventListener('click', () => {
     dbService.logout();
     AppState.currentUser = null;
-    showToast('Has cerrado la sesión correctamente.', 'info');
-    openAuthModal('login');
+
+    // SOLUCIÓN AL BUG REPORTADO: Al cerrar sesión, automáticamente cambiar al constructor visual
+    switchTab('tab-builder');
+
+    // Ocultar pestaña de administración de inmediato
+    document.getElementById('tab-nav-admin')?.classList.add('hidden');
+
+    showToast('Has cerrado sesión correctamente.', 'info');
+    openAuthModal();
   });
 }
 
-function openAuthModal(mode = 'login') {
+function openAuthModal() {
   const authModal = document.getElementById('auth-modal');
   authModal?.classList.add('active');
-
-  const authTabBtns = document.querySelectorAll('[data-auth-mode]');
-  authTabBtns.forEach(b => {
-    if (b.getAttribute('data-auth-mode') === mode) b.classList.add('active');
-    else b.classList.remove('active');
-  });
-
-  showAuthSubform(mode);
-  updateAuthCapacityNotice();
-  updateDeleteUserSelect();
+  updateProfileFormUI();
 }
 
-function showAuthSubform(mode) {
-  document.getElementById('form-login')?.classList.add('hidden');
-  document.getElementById('form-register')?.classList.add('hidden');
-  document.getElementById('form-delete-profile')?.classList.add('hidden');
+function updateProfileFormUI() {
+  const profileId = AppState.selectedProfileId;
+  const passGroup = document.getElementById('admin-password-group');
+  const passInput = document.getElementById('login-password');
+  const submitBtn = document.getElementById('btn-submit-login');
 
-  if (mode === 'login') {
-    document.getElementById('form-login')?.classList.remove('hidden');
-  } else if (mode === 'register') {
-    document.getElementById('form-register')?.classList.remove('hidden');
-    updateAuthCapacityNotice();
-  } else if (mode === 'delete') {
-    document.getElementById('form-delete-profile')?.classList.remove('hidden');
-    updateDeleteUserSelect();
-  }
-}
+  const profile = Object.values(PROFILES).find(p => p.id === profileId);
+  const profileName = profile ? profile.name : 'Usuario';
 
-function updateAuthCapacityNotice() {
-  const current = dbService.getUserCount();
-  const settings = dbService.getSettings();
-  const max = settings.maxUsers;
-  const isFull = dbService.isCapacityReached();
-
-  const statusEl = document.getElementById('register-capacity-status');
-  const warningEl = document.getElementById('register-capacity-warning');
-  const submitBtn = document.getElementById('btn-submit-register');
-
-  if (statusEl) {
-    statusEl.textContent = `Aforo actual del sistema: ${current} de ${max} perfiles registrados.`;
-  }
-
-  if (isFull) {
-    warningEl?.classList.remove('hidden');
-    if (submitBtn) submitBtn.disabled = true;
+  if (profileId === 'admin') {
+    passGroup?.classList.remove('hidden');
+    if (passInput) {
+      passInput.required = true;
+      passInput.focus();
+    }
+    if (submitBtn) submitBtn.textContent = `Ingresar al Sistema como ${profileName}`;
   } else {
-    warningEl?.classList.add('hidden');
-    if (submitBtn) submitBtn.disabled = false;
-  }
-}
-
-function updateDeleteUserSelect() {
-  const select = document.getElementById('delete-user-select');
-  if (!select) return;
-
-  const users = dbService.getUsers();
-  // Filtrar admin: el admin jamás se muestra en la lista de eliminables
-  const deletableUsers = users.filter(u => u.username.toLowerCase() !== 'admin');
-
-  select.innerHTML = '';
-
-  if (deletableUsers.length === 0) {
-    const opt = document.createElement('option');
-    opt.value = '';
-    opt.textContent = 'No hay usuarios regulares registrados para eliminar';
-    select.appendChild(opt);
-    select.disabled = true;
-  } else {
-    select.disabled = false;
-    const defaultOpt = document.createElement('option');
-    defaultOpt.value = '';
-    defaultOpt.textContent = '-- Seleccione el usuario a eliminar --';
-    select.appendChild(defaultOpt);
-
-    deletableUsers.forEach(u => {
-      const opt = document.createElement('option');
-      opt.value = u.username;
-      opt.textContent = `${u.username} (creado el ${new Date(u.createdAt).toLocaleDateString()})`;
-      select.appendChild(opt);
-    });
+    passGroup?.classList.add('hidden');
+    if (passInput) {
+      passInput.required = false;
+      passInput.value = '';
+    }
+    if (submitBtn) submitBtn.textContent = `Ingresar al Sistema como ${profileName}`;
   }
 }
 
@@ -309,100 +218,45 @@ function loginSuccess(session) {
   const roleBadge = document.getElementById('current-user-role');
   const avatar = document.getElementById('current-user-avatar');
 
+  avatar.textContent = session.icon || '👤';
+
   if (session.role === 'admin') {
-    roleBadge.textContent = 'ADMIN';
+    roleBadge.textContent = 'ADMINISTRADOR';
     roleBadge.className = 'badge badge-admin';
-    avatar.textContent = '🛡️';
-
-    // Mostrar opciones de admin
     document.getElementById('tab-nav-admin')?.classList.remove('hidden');
-    document.getElementById('admin-summary-banner')?.classList.remove('hidden');
-    updateAdminDashboard();
+    updateAdminSettingsUI();
   } else {
-    roleBadge.textContent = 'ESTUDIANTE';
-    roleBadge.className = 'badge badge-user';
-    avatar.textContent = '🎓';
-
-    // Ocultar opciones de admin
+    // Si no es admin, garantizar que NO quede en la pestaña de administración
     document.getElementById('tab-nav-admin')?.classList.add('hidden');
-    document.getElementById('admin-summary-banner')?.classList.add('hidden');
+    const currentActiveTab = document.querySelector('.nav-tab.active');
+    if (currentActiveTab && currentActiveTab.getAttribute('data-tab') === 'tab-admin') {
+      switchTab('tab-builder');
+    }
+
+    if (session.role === 'profesor') {
+      roleBadge.textContent = 'PROFESOR';
+      roleBadge.className = 'badge badge-profesor';
+    } else {
+      roleBadge.textContent = 'ESTUDIANTE';
+      roleBadge.className = 'badge badge-user';
+    }
   }
 
   updateNotationUI();
 }
 
 // =============================================================================
-// PANEL DE ADMINISTRACIÓN
+// PARÁMETROS DEL SISTEMA (ADMINISTRADOR)
 // =============================================================================
-function updateAdminDashboard() {
-  const current = dbService.getUserCount();
+function updateAdminSettingsUI() {
   const settings = dbService.getSettings();
-  const max = settings.maxUsers;
-
-  // Banner superior
-  document.getElementById('admin-count-current').textContent = current;
-  document.getElementById('admin-count-max').textContent = max;
-  const pct = Math.min(100, Math.round((current / max) * 100));
-  const bar = document.getElementById('admin-capacity-bar');
-  if (bar) {
-    bar.style.width = `${pct}%`;
-    bar.style.background = pct >= 100 ? 'var(--accent-rose)' : 'var(--gradient-primary)';
-  }
-
-  // Inputs del panel de administración
-  const capInput = document.getElementById('admin-input-capacity');
-  if (capInput) capInput.value = max;
-
   const notSelect = document.getElementById('admin-notation-lock-select');
-  if (notSelect) notSelect.value = settings.forcedNotation || 'none';
-
-  // Tabla de usuarios
-  const tbody = document.getElementById('admin-users-table-body');
-  if (tbody) {
-    tbody.innerHTML = '';
-    const users = dbService.getUsers();
-    users.forEach(u => {
-      const tr = document.createElement('tr');
-      const isAdmin = u.username.toLowerCase() === 'admin';
-      tr.innerHTML = `
-        <td><strong>${u.username}</strong></td>
-        <td>
-          <span class="badge ${isAdmin ? 'badge-admin' : 'badge-user'}">
-            ${isAdmin ? 'Administrador' : 'Estudiante'}
-          </span>
-        </td>
-        <td>${new Date(u.createdAt).toLocaleString()}</td>
-        <td>
-          ${isAdmin
-            ? '<span class="text-emerald">🔒 Protegido contra eliminación</span>'
-            : '<span class="text-muted">Activo (Eliminable desde Login con contraseña)</span>'
-          }
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
+  if (notSelect) {
+    notSelect.value = settings.forcedNotation || 'none';
   }
 }
 
 function initAdminEvents() {
-  // Ir rápido a la pestaña de administración desde el banner
-  document.getElementById('btn-quick-admin-tab')?.addEventListener('click', () => {
-    switchTab('tab-admin');
-  });
-
-  // Guardar nueva capacidad
-  document.getElementById('btn-admin-save-capacity')?.addEventListener('click', () => {
-    const limit = document.getElementById('admin-input-capacity').value;
-    const res = dbService.setMaxUsers(limit);
-    if (res.success) {
-      showToast(res.message, 'success');
-      updateAdminDashboard();
-    } else {
-      showToast(res.message, 'error');
-    }
-  });
-
-  // Guardar regla de notación
   document.getElementById('btn-admin-save-notation')?.addEventListener('click', () => {
     const notation = document.getElementById('admin-notation-lock-select').value;
     const res = dbService.setForcedNotation(notation);
@@ -437,6 +291,11 @@ function initTabs() {
   tabs.forEach(t => {
     t.addEventListener('click', () => {
       const tabId = t.getAttribute('data-tab');
+      // Seguridad: Solo admin puede entrar a tab-admin
+      if (tabId === 'tab-admin' && AppState.currentUser?.role !== 'admin') {
+        showToast('Acceso restringido: únicamente disponible para el Administrador.', 'error');
+        return;
+      }
       switchTab(tabId);
     });
   });
@@ -459,8 +318,9 @@ function renderAtomicDefinitions() {
     card.className = 'atomic-item-card';
     card.innerHTML = `
       <span class="atomic-var-badge">${item.name}</span>
-      <input type="text" class="form-input atomic-text-input" data-var="${item.name}" value="${item.text}" placeholder="Enunciado de ${item.name}..." style="font-size: 0.9rem; padding: 0.5rem 0.75rem;">
-      ${index > 1 ? `<button class="btn btn-icon btn-remove-atomic" data-index="${index}" title="Eliminar variable" style="width: 32px; height: 32px; font-size: 0.9rem;">✕</button>` : ''}
+      <input type="text" class="form-input atomic-text-input" id="atomic-input-${item.name}" data-var="${item.name}" value="${item.text}" placeholder="Enunciado de ${item.name}..." style="font-size: 0.9rem; padding: 0.5rem 0.75rem;">
+      <button class="btn-clear-inline btn-clear-atomic-field" data-var="${item.name}" title="Limpiar enunciado de ${item.name}">✕</button>
+      ${index > 1 ? `<button class="btn-clear-inline btn-remove-atomic" data-index="${index}" title="Eliminar variable" style="color: var(--accent-rose);">🗑️</button>` : ''}
     `;
     container.appendChild(card);
 
@@ -475,7 +335,7 @@ function renderAtomicDefinitions() {
     quickVarsContainer.appendChild(btn);
   });
 
-  // Listeners para cambio de texto de enunciados
+  // Listeners para escribir enunciados
   container.querySelectorAll('.atomic-text-input').forEach(input => {
     input.addEventListener('input', (e) => {
       const v = e.target.getAttribute('data-var');
@@ -487,9 +347,24 @@ function renderAtomicDefinitions() {
     });
   });
 
-  // Listeners para remover atómica
+  // Listeners para botón '✕' de limpiar campo individual
+  container.querySelectorAll('.btn-clear-atomic-field').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const v = btn.getAttribute('data-var');
+      const item = AppState.builderAtomics.find(a => a.name === v);
+      const input = document.getElementById(`atomic-input-${v}`);
+      if (item && input) {
+        item.text = '';
+        input.value = '';
+        input.focus();
+        updateBuilderDisplay();
+      }
+    });
+  });
+
+  // Listeners para remover variable extra
   container.querySelectorAll('.btn-remove-atomic').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', () => {
       const idx = parseInt(btn.getAttribute('data-index'), 10);
       AppState.builderAtomics.splice(idx, 1);
       renderAtomicDefinitions();
@@ -503,6 +378,12 @@ function addBuilderToken(token) {
   updateBuilderDisplay();
 }
 
+function clearBuilderCanvas() {
+  AppState.builderTokens = [];
+  updateBuilderDisplay();
+  showToast('Lienzo de proposición molecular limpiado.', 'info');
+}
+
 function updateBuilderDisplay() {
   const canvas = document.getElementById('builder-canvas');
   const fbfOutput = document.getElementById('builder-fbf-output');
@@ -514,7 +395,7 @@ function updateBuilderDisplay() {
   if (AppState.builderTokens.length === 0) {
     canvas.innerHTML = `
       <span id="canvas-placeholder" class="text-muted" style="font-size: 0.9rem;">
-        Haz clic en las variables y conectivos inferiores para comenzar a ensamblar la proposición molecular...
+        Haz clic en los botones inferiores o en "🎲 Molecular Aleatoria" para ensamblar la proposición molecular...
       </span>
     `;
     fbfOutput.textContent = '--';
@@ -522,7 +403,7 @@ function updateBuilderDisplay() {
     return;
   }
 
-  // Render tokens en lienzo
+  // Renderizar tokens en el lienzo
   canvas.innerHTML = '';
   AppState.builderTokens.forEach((tok, idx) => {
     const el = document.createElement('div');
@@ -546,7 +427,7 @@ function updateBuilderDisplay() {
     canvas.appendChild(el);
   });
 
-  // Ensamblar cadena para el parser
+  // Ensamblar cadena de texto para el parser
   let rawFormulaStr = '';
   AppState.builderTokens.forEach(tok => {
     if (tok.type === 'var') {
@@ -563,7 +444,6 @@ function updateBuilderDisplay() {
   // Intentar parsear formalmente para construir lenguaje natural
   try {
     const ast = FBFParser.parse(rawFormulaStr);
-    // Mapear variables atómicas
     const varMap = {};
     AppState.builderAtomics.forEach(a => {
       varMap[a.name] = a.text;
@@ -574,7 +454,6 @@ function updateBuilderDisplay() {
     sentenceOutput.classList.remove('text-muted');
     sentenceOutput.style.color = 'var(--text-primary)';
   } catch (err) {
-    // Si aún está a medio armar (ej. terminó en un operador), mostrar guía en proceso
     sentenceOutput.textContent = `Construyendo proposición molecular... (${err.message})`;
     sentenceOutput.classList.add('text-muted');
   }
@@ -603,18 +482,44 @@ function initVisualBuilder() {
     showToast(`Variable [${nextLetter}] añadida exitosamente.`, 'info');
   });
 
+  // BOTÓN NUEVO: Generar aleatoriamente proposiciones atómicas según cuántas variables haya disponibles
+  document.getElementById('btn-randomize-atomics-builder')?.addEventListener('click', () => {
+    const vars = AppState.builderAtomics.map(a => a.name);
+    const generated = RandomGenerators.generateAtomicStatements(vars);
+
+    AppState.builderAtomics.forEach(a => {
+      if (generated[a.name]) {
+        a.text = generated[a.name];
+      }
+    });
+
+    renderAtomicDefinitions();
+    updateBuilderDisplay();
+    showToast(`Se generaron aleatoriamente ${vars.length} proposiciones atómicas para las variables activas.`, 'success');
+  });
+
+  // BOTÓN NUEVO: Generar proposición molecular aleatoria compleja (con tokens y conectivos válidos)
+  document.getElementById('btn-random-molecular-builder')?.addEventListener('click', () => {
+    const availableVars = AppState.builderAtomics.map(a => a.name);
+    // Generar FBF aleatoria con profundidad 2-4
+    const res = RandomGenerators.generateFBF('random', AppState.currentNotation, availableVars);
+    const tokens = RandomGenerators.astToTokens(res.ast);
+
+    AppState.builderTokens = tokens;
+    updateBuilderDisplay();
+    showToast('Proposición molecular aleatoria generada exitosamente en el lienzo.', 'success');
+  });
+
+  // Botones de Limpieza Rápida de la proposición molecular
+  document.getElementById('btn-clear-canvas')?.addEventListener('click', clearBuilderCanvas);
+  document.getElementById('btn-quick-clear-formula')?.addEventListener('click', clearBuilderCanvas);
+
   // Deshacer último token
   document.getElementById('btn-undo-token')?.addEventListener('click', () => {
     if (AppState.builderTokens.length > 0) {
       AppState.builderTokens.pop();
       updateBuilderDisplay();
     }
-  });
-
-  // Limpiar lienzo
-  document.getElementById('btn-clear-canvas')?.addEventListener('click', () => {
-    AppState.builderTokens = [];
-    updateBuilderDisplay();
   });
 
   // Botones de conectivos y paréntesis
@@ -646,7 +551,7 @@ function initVisualBuilder() {
 }
 
 // =============================================================================
-// PROCESO INVERSO: DE FBF A PROPOSICIONES MOLECULARES (DETERMINISTA)
+// PROCESO INVERSO: DE FBF A PROPOSICIONES MOLECULARES
 // =============================================================================
 function initInverseProcess() {
   // Teclado virtual del proceso inverso
@@ -663,6 +568,27 @@ function initInverseProcess() {
         input.selectionStart = input.selectionEnd = start + char.length;
       }
     });
+  });
+
+  // Botón Limpiar campo input FBF
+  document.getElementById('btn-clear-inverse-input')?.addEventListener('click', () => {
+    const input = document.getElementById('inverse-fbf-input');
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+  });
+
+  // BOTÓN NUEVO: Generar FBF aleatoria en el Proceso Inverso
+  document.getElementById('btn-random-inverse-fbf')?.addEventListener('click', () => {
+    const res = RandomGenerators.generateFBF('random', AppState.currentNotation, ['p', 'q', 'r', 's', 't']);
+    const input = document.getElementById('inverse-fbf-input');
+    if (input) {
+      input.value = res.fbfString;
+      // Analizar automáticamente
+      document.getElementById('btn-parse-inverse')?.click();
+      showToast('FBF aleatoria con paréntesis balanceados generada.', 'success');
+    }
   });
 
   // Analizar FBF ingresada
@@ -697,11 +623,28 @@ function initInverseProcess() {
     }
   });
 
+  // BOTÓN NUEVO: Generar atómicas aleatorias para las variables detectadas en el proceso inverso
+  document.getElementById('btn-randomize-inverse-vars')?.addEventListener('click', () => {
+    if (!AppState.inverseVars || AppState.inverseVars.length === 0) return;
+
+    const generated = RandomGenerators.generateAtomicStatements(AppState.inverseVars);
+    AppState.inverseVars.forEach(v => {
+      const input = document.getElementById(`inverse-var-input-${v}`);
+      if (input && generated[v]) {
+        input.value = generated[v];
+        AppState.inverseVarMap[v] = generated[v];
+      }
+    });
+
+    // Reconstruir automáticamente
+    document.getElementById('btn-generate-inverse-sentence')?.click();
+    showToast('Proposiciones atómicas generadas aleatoriamente.', 'success');
+  });
+
   // Reconstruir proposición molecular
   document.getElementById('btn-generate-inverse-sentence')?.addEventListener('click', () => {
     if (!AppState.inverseAst) return;
 
-    // Recolectar valores ingresados por el usuario para cada variable
     let allFilled = true;
     AppState.inverseVars.forEach(v => {
       const input = document.getElementById(`inverse-var-input-${v}`);
@@ -723,10 +666,15 @@ function initInverseProcess() {
     }
 
     if (!allFilled) {
-      showToast('Reconstrucción generada. Para mayor precisión determinista, completa todos los enunciados.', 'info');
+      showToast('Reconstrucción generada con variables pendientes.', 'info');
     } else {
       showToast('¡Proposición molecular en español reconstruida con éxito!', 'success');
     }
+  });
+
+  // Botón Limpiar Resultado Inverso
+  document.getElementById('btn-clear-inverse-result')?.addEventListener('click', () => {
+    document.getElementById('inverse-result-box')?.classList.add('hidden');
   });
 
   // Enviar FBF inversa a Tabla de Verdad
@@ -751,61 +699,17 @@ function renderInverseVarInputs(vars) {
     div.innerHTML = `
       <span class="atomic-var-badge">${v}</span>
       <input type="text" id="inverse-var-input-${v}" class="form-input" placeholder="Escribe el enunciado en español para la proposición ${v}..." style="font-size: 0.95rem;">
+      <button class="btn-clear-inline btn-clear-inverse-single" data-var="${v}" title="Limpiar enunciado de ${v}">✕</button>
     `;
     container.appendChild(div);
-  });
-}
 
-// =============================================================================
-// GENERADORES ALEATORIOS
-// =============================================================================
-function initGenerators() {
-  // Botón 1: Proposición molecular aleatoria en lenguaje natural
-  document.getElementById('btn-random-molecular-sentence')?.addEventListener('click', () => {
-    const sentence = RandomGenerators.generateMolecularProposition();
-    const box = document.getElementById('random-sentence-display-box');
-    const output = document.getElementById('random-sentence-output');
-
-    if (box && output) {
-      output.textContent = sentence;
-      box.classList.remove('hidden');
-      showToast('Proposición molecular aleatoria generada.', 'success');
-    }
-  });
-
-  // Botón 2: Fórmula Bien Formada (FBF) aleatoria
-  document.getElementById('btn-random-fbf')?.addEventListener('click', () => {
-    const complexity = document.getElementById('random-fbf-complexity')?.value || 'random';
-    const result = RandomGenerators.generateFBF(complexity, AppState.currentNotation);
-
-    const box = document.getElementById('random-fbf-display-box');
-    const output = document.getElementById('random-fbf-output');
-
-    if (box && output) {
-      output.textContent = result.fbfString;
-      box.classList.remove('hidden');
-      showToast('FBF aleatoria con paréntesis balanceados generada.', 'success');
-    }
-  });
-
-  // Cargar FBF aleatoria en Proceso Inverso
-  document.getElementById('btn-load-random-fbf-inverse')?.addEventListener('click', () => {
-    const fbf = document.getElementById('random-fbf-output').textContent.trim();
-    if (!fbf || fbf === '--') return;
-    const invInput = document.getElementById('inverse-fbf-input');
-    if (invInput) invInput.value = fbf;
-    switchTab('tab-inverse');
-    document.getElementById('btn-parse-inverse')?.click();
-  });
-
-  // Cargar FBF aleatoria en Tabla de Verdad
-  document.getElementById('btn-load-random-fbf-truth')?.addEventListener('click', () => {
-    const fbf = document.getElementById('random-fbf-output').textContent.trim();
-    if (!fbf || fbf === '--') return;
-    const truthInput = document.getElementById('truth-fbf-input');
-    if (truthInput) truthInput.value = fbf;
-    switchTab('tab-truthtable');
-    document.getElementById('btn-generate-truth-table')?.click();
+    div.querySelector('.btn-clear-inverse-single').addEventListener('click', () => {
+      const input = document.getElementById(`inverse-var-input-${v}`);
+      if (input) {
+        input.value = '';
+        input.focus();
+      }
+    });
   });
 }
 
@@ -813,6 +717,14 @@ function initGenerators() {
 // TABLA DE VERDAD Y ÁRBOL SINTÁCTICO
 // =============================================================================
 function initTruthTableAndTree() {
+  document.getElementById('btn-clear-truth-input')?.addEventListener('click', () => {
+    const input = document.getElementById('truth-fbf-input');
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+  });
+
   document.getElementById('btn-generate-truth-table')?.addEventListener('click', () => {
     const inputVal = document.getElementById('truth-fbf-input').value.trim();
     if (!inputVal) {
@@ -828,7 +740,7 @@ function initTruthTableAndTree() {
       renderSyntaxTree(ast);
 
       document.getElementById('truth-results-container')?.classList.remove('hidden');
-      showToast(`Evaluación completada exitosamente: ${tableData.classification}`, 'success');
+      showToast(`Evaluación completada: ${tableData.classification}`, 'success');
     } catch (err) {
       showToast(`Error al evaluar fórmula: ${err.message}`, 'error');
       document.getElementById('truth-results-container')?.classList.add('hidden');
@@ -844,12 +756,10 @@ function renderTruthTable(data) {
 
   if (!table) return;
 
-  // Actualizar banner de diagnóstico
   banner.className = `truth-classification-banner banner-${data.classification.toLowerCase()}`;
   title.textContent = `DIAGNÓSTICO FORMAL: ${data.classification}`;
   desc.textContent = data.description;
 
-  // Construir encabezado
   let theadHTML = '<thead><tr><th>#</th>';
   data.variables.forEach(v => {
     theadHTML += `<th>${v}</th>`;
@@ -859,7 +769,6 @@ function renderTruthTable(data) {
   });
   theadHTML += `<th class="col-main">${data.fullExprStr} (Resultado)</th></tr></thead>`;
 
-  // Construir cuerpo de filas
   let tbodyHTML = '<tbody>';
   data.rows.forEach(r => {
     tbodyHTML += `<tr><td><strong>${r.rowIndex}</strong></td>`;
@@ -921,6 +830,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initAdminEvents();
   initVisualBuilder();
   initInverseProcess();
-  initGenerators();
   initTruthTableAndTree();
 });

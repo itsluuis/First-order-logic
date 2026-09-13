@@ -1,12 +1,12 @@
 /**
  * generators.js - Generador Aleatorio de Proposiciones Moleculares y Fórmulas Bien Formadas (FBF)
- * Genera proposiciones en lenguaje natural con sentido lógico y FBFs complejas con paréntesis balanceados.
+ * Adaptado para generación directa dentro del Constructor Visual y del Proceso Inverso.
  */
 
 import { OPERATORS, NOTATION_MODES, NOTATION_SYMBOLS } from './ast.js';
 
 // Banco de enunciados atómicos en español para generar proposiciones naturales
-const ATOMIC_BANK = [
+export const ATOMIC_BANK = [
   'estudio para el examen',
   'apruebo la materia de lógica',
   'el servidor responde a tiempo',
@@ -21,64 +21,34 @@ const ATOMIC_BANK = [
   'el circuito eléctrico está cerrado',
   'fluye la corriente eléctrica',
   'el sensor detecta movimiento',
-  'se enciende la luz indicadora'
-];
-
-const CONNECTIVE_TEMPLATES = [
-  { op: 'AND', format: (a, b) => `${a} y ${b}` },
-  { op: 'OR', format: (a, b) => `${a} o ${b}` },
-  { op: 'IMPLIES', format: (a, b) => `si ${a}, entonces ${b}` },
-  { op: 'IFF', format: (a, b) => `${a} si y solo si ${b}` }
+  'se enciende la luz indicadora',
+  'el algoritmo converge correctamente',
+  'la base de datos está sincronizada',
+  'se compila el código sin errores'
 ];
 
 export class RandomGenerators {
   /**
-   * Genera aleatoriamente una proposición molecular en lenguaje natural coherente,
-   * con múltiples operaciones y conectivos lógicos combinados.
+   * Genera un conjunto de enunciados atómicos aleatorios para una lista de variables dada.
+   * Si hay 1 variable, genera 1 enunciado; si hay 3 variables, genera 3 enunciados distintos.
    */
-  static generateMolecularProposition() {
-    // Seleccionar de 2 a 4 proposiciones atómicas sin repetir
-    const shuffledAtomics = [...ATOMIC_BANK].sort(() => 0.5 - Math.random());
-    const count = Math.floor(Math.random() * 3) + 2; // 2, 3 o 4 proposiciones
-    const selectedAtomics = shuffledAtomics.slice(0, count);
+  static generateAtomicStatements(variables = ['p']) {
+    const shuffled = [...ATOMIC_BANK].sort(() => 0.5 - Math.random());
+    const result = {};
 
-    // Ocasionalmente aplicar negación a alguna atómica
-    const preparedAtomics = selectedAtomics.map(stmt => {
-      if (Math.random() < 0.3) {
-        return `no ${stmt}`;
-      }
-      return stmt;
+    variables.forEach((v, idx) => {
+      result[v] = shuffled[idx % shuffled.length];
     });
 
-    let current = preparedAtomics[0];
-
-    for (let i = 1; i < preparedAtomics.length; i++) {
-      const conn = CONNECTIVE_TEMPLATES[Math.floor(Math.random() * CONNECTIVE_TEMPLATES.length)];
-      const nextStmt = preparedAtomics[i];
-
-      // Ocasionalmente agrupar con paréntesis en lenguaje natural si es complejo
-      if (i > 1 && Math.random() < 0.5) {
-        current = `(${current})`;
-      }
-
-      current = conn.format(current, nextStmt);
-    }
-
-    // Capitalizar y añadir punto final
-    let result = current.trim();
-    result = result.charAt(0).toUpperCase() + result.slice(1) + '.';
     return result;
   }
 
   /**
-   * Genera un árbol sintáctico aleatorio (AST) válido para FBF.
-   * @param {number} depth - Profundidad actual
-   * @param {number} maxDepth - Profundidad máxima (soporta formas largas y complejas)
-   * @param {string[]} availableVars - Variables proposicionales a usar
+   * Genera un AST aleatorio con profundidad y variables especificadas.
    */
-  static generateRandomAST(depth = 0, maxDepth = 3, availableVars = ['p', 'q', 'r', 's', 't']) {
-    // Caso base: si llegamos a la profundidad máxima o por probabilidad, retornar variable
-    if (depth >= maxDepth || (depth > 0 && Math.random() < 0.35)) {
+  static generateRandomAST(depth = 0, maxDepth = 3, availableVars = ['p', 'q']) {
+    // Caso base: profundidad alcanzada o variable terminal
+    if (depth >= maxDepth || (depth > 0 && Math.random() < 0.32)) {
       const varName = availableVars[Math.floor(Math.random() * availableVars.length)];
       return {
         type: 'variable',
@@ -86,9 +56,8 @@ export class RandomGenerators {
       };
     }
 
-    // Decidir entre unario (negación) o binario
+    // Probabilidad de negación unaria (¬)
     const isUnary = Math.random() < 0.25;
-
     if (isUnary) {
       return {
         type: 'unary',
@@ -110,37 +79,66 @@ export class RandomGenerators {
   }
 
   /**
-   * Convierte el AST generado en una cadena FBF con paréntesis perfectamente equilibrados.
-   * Admite distintas complejidades: 'simple' (1-2 conectivos), 'medio' (2-4), 'largo' (4-7 conectivos).
+   * Convierte un AST en una lista plana de tokens para el Constructor Visual.
+   * Tokens con { type: 'var'|'op'|'paren', value: string }
    */
-  static generateFBF(complexity = 'random', notation = NOTATION_MODES.STANDARD) {
-    let maxDepth = 2;
+  static astToTokens(node) {
+    const tokens = [];
 
-    if (complexity === 'simple') {
-      maxDepth = 1;
-    } else if (complexity === 'medio') {
-      maxDepth = 2;
-    } else if (complexity === 'largo') {
-      maxDepth = 4;
-    } else {
-      // Aleatorio entre 2 y 4 para soportar formas largas como p ^ (-s -> t) o s -> (-s ^ ((p v t) v (t ^ s)))
-      maxDepth = Math.floor(Math.random() * 3) + 2; // 2, 3 o 4
+    function walk(n, isTop = false) {
+      if (!n) return;
+
+      if (n.type === 'variable') {
+        tokens.push({ type: 'var', value: n.name });
+        return;
+      }
+
+      if (n.type === 'unary') {
+        tokens.push({ type: 'op', value: 'NOT' });
+        if (n.operand.type === 'binary') {
+          tokens.push({ type: 'paren', value: '(' });
+          walk(n.operand, false);
+          tokens.push({ type: 'paren', value: ')' });
+        } else {
+          walk(n.operand, false);
+        }
+        return;
+      }
+
+      if (n.type === 'binary') {
+        const needParens = !isTop;
+        if (needParens) tokens.push({ type: 'paren', value: '(' });
+
+        walk(n.left, false);
+        tokens.push({ type: 'op', value: n.op });
+        walk(n.right, false);
+
+        if (needParens) tokens.push({ type: 'paren', value: ')' });
+      }
     }
 
-    // Conjunto de variables representativas
-    const varsPool = ['p', 'q', 'r', 's', 't'];
-    // Tomar subconjunto aleatorio de variables (2 a 4)
-    const varCount = Math.min(maxDepth + 1, 4);
-    const chosenVars = varsPool.slice(0, varCount);
+    walk(node, true);
+    return tokens;
+  }
+
+  /**
+   * Genera una FBF aleatoria formateada como string.
+   */
+  static generateFBF(complexity = 'random', notation = NOTATION_MODES.STANDARD, availableVars = ['p', 'q', 'r', 's', 't']) {
+    let maxDepth = 2;
+    if (complexity === 'simple') maxDepth = 1;
+    else if (complexity === 'medio') maxDepth = 2;
+    else if (complexity === 'largo') maxDepth = 4;
+    else maxDepth = Math.floor(Math.random() * 3) + 2; // 2, 3 o 4
+
+    const varCount = Math.min(maxDepth + 1, availableVars.length);
+    const chosenVars = availableVars.slice(0, varCount);
 
     const ast = this.generateRandomAST(0, maxDepth, chosenVars);
     const symbols = NOTATION_SYMBOLS[notation] || NOTATION_SYMBOLS.standard;
 
-    // Función de serialización con paréntesis estrictos y equilibrados
     function serialize(node, isTopLevel = false) {
-      if (node.type === 'variable') {
-        return node.name;
-      }
+      if (node.type === 'variable') return node.name;
 
       if (node.type === 'unary') {
         const inner = serialize(node.operand, false);
@@ -160,7 +158,6 @@ export class RandomGenerators {
         const expr = `${leftFormatted} ${symbols[node.op]} ${rightFormatted}`;
         return isTopLevel ? expr : expr;
       }
-
       return '';
     }
 
