@@ -1,0 +1,9 @@
+# Entornos y dependencias
+node_modules/
+.DS_Store
+Thumbs.db
+
+# Logs y temporales
+*.log
+*.tmp
+.cache/

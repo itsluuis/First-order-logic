@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Software de Lógica Simbólica para la construcción de proposiciones moleculares, fórmulas bien formadas (FBF), proceso inverso, tablas de verdad y generadores aleatorios.">
+  <title>Lógica Simbólica | Proposiciones Moleculares & FBF</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Fondos luminosos abstractos -->
+  <div class="bg-glow-container">
+    <div class="bg-glow-1"></div>
+    <div class="bg-glow-2"></div>
+  </div>
+
+  <div class="app-container">
+    <!-- Header Principal -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="brand-icon">∧∨</div>
+        <div>
+          <h1 class="brand-title">Lógica Simbólica</h1>
+          <p class="brand-subtitle">Proposiciones Moleculares & Fórmulas Bien Formadas (FBF)</p>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <!-- Selector de Notación -->
+        <div class="user-profile-pill" id="notation-control-container" title="Alternar notación de conectivos lógicos">
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Notación:</span>
+          <select id="notation-select" class="form-input" style="padding: 0.2rem 0.6rem; font-size: 0.8rem; width: auto; background: transparent; border: none; font-weight: 600;">
+            <option value="standard">Estándar (¬, ∧, ∨, →, ↔)</option>
+            <option value="alternative">Alternativa (~, &, ∨, ⊃, ≡)</option>
+          </select>
+          <span id="notation-locked-badge" class="badge badge-admin hidden" style="font-size: 0.65rem;" title="Bloqueado por el Administrador">🔒 Fijo</span>
+        </div>
+
+        <!-- Indicador de Usuario / Sesión -->
+        <div class="user-profile-pill" id="user-session-info">
+          <span id="current-user-avatar">👤</span>
+          <span id="current-username" style="font-weight: 600;">Invitado</span>
+          <span id="current-user-role" class="badge badge-user">Estudiante</span>
+        </div>
+
+        <!-- Botón de Tema (Dark / Light) -->
+        <button id="btn-toggle-theme" class="btn btn-icon" title="Cambiar Tema Claro / Oscuro">
+          🌓
+        </button>
+
+        <!-- Botón de Cerrar Sesión -->
+        <button id="btn-logout" class="btn btn-secondary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem;">
+          Salir
+        </button>
+      </div>
+    </header>
+
+    <!-- Banner de Información de Administrador (visible si es admin) -->
+    <section id="admin-summary-banner" class="admin-badge-indicator hidden">
+      <div class="flex items-center gap-2">
+        <span class="badge badge-admin">Panel de Control de Administrador</span>
+        <span id="admin-capacity-text" style="font-size: 0.9rem; font-weight: 600;">
+          Aforo: <strong id="admin-count-current">1</strong> / <span id="admin-count-max">5</span> usuarios
+        </span>
+      </div>
+      <div class="capacity-meter-box">
+        <div class="capacity-progress-bar">
+          <div id="admin-capacity-bar" class="capacity-progress-fill" style="width: 20%;"></div>
+        </div>
+        <button id="btn-quick-admin-tab" class="btn btn-primary" style="padding: 0.35rem 0.8rem; font-size: 0.8rem;">
+          ⚙️ Administrar Aforo y Reglas
+        </button>
+      </div>
+    </section>
+
+    <!-- Navegación por Pestañas del Sistema -->
+    <nav class="nav-tabs" id="main-nav-tabs">
+      <button class="nav-tab active" data-tab="tab-builder">
+        <span>🧩</span> Constructor Visual
+      </button>
+      <button class="nav-tab" data-tab="tab-inverse">
+        <span>🔄</span> Proceso Inverso
+      </button>
+      <button class="nav-tab" data-tab="tab-generators">
+        <span>🎲</span> Generadores Aleatorios
+      </button>
+      <button class="nav-tab" data-tab="tab-truthtable">
+        <span>📊</span> Tabla de Verdad & Árbol
+      </button>
+      <button class="nav-tab hidden" id="tab-nav-admin" data-tab="tab-admin">
+        <span>🛡️</span> Administración
+      </button>
+    </nav>
+
+    <!-- =========================================================================
+         PESTAÑA 1: CONSTRUCTOR VISUAL (Proposiciones Moleculares -> FBF)
+         ========================================================================= -->
+    <section id="tab-builder" class="tab-content active">
+      <div class="visual-builder-layout">
+        <!-- Columna Izquierda: Definición de Proposiciones Atómicas -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">1. Proposiciones Atómicas</h2>
+              <p class="card-subtitle">Asigna enunciados en lenguaje natural para cada variable básica.</p>
+            </div>
+            <button id="btn-add-atomic" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">
+              + Variable
+            </button>
+          </div>
+
+          <div id="atomic-definitions-container" class="atomic-list">
+            <!-- Items de variables atómicas inyectados dinámicamente -->
+          </div>
+        </div>
+
+        <!-- Columna Derecha: Constructor Interactivo de la Expresión -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">2. Ensamble Molecular</h2>
+              <p class="card-subtitle">Haz clic en las variables y conectivos lógicos para construir la fórmula.</p>
+            </div>
+            <div class="flex gap-1">
+              <button id="btn-undo-token" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.65rem;" title="Deshacer último símbolo">
+                ↶ Deshacer
+              </button>
+              <button id="btn-clear-canvas" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.65rem;" title="Limpiar todo">
+                🗑️ Limpiar
+              </button>
+            </div>
+          </div>
+
+          <!-- Lienzo visual de tokens construidos -->
+          <div id="builder-canvas" class="builder-canvas">
+            <span id="canvas-placeholder" class="text-muted" style="font-size: 0.9rem;">
+              Haz clic en los botones inferiores para comenzar a ensamblar la proposición molecular...
+            </span>
+          </div>
+
+          <!-- Teclado de Conectivos y Variables para el Constructor -->
+          <div class="symbol-keyboard">
+            <button class="btn-symbol" data-insert-type="op" data-op="NOT" title="Negación (No / Es falso que)">
+              <span class="symbol-char" data-sym="NOT">¬</span>
+              <span class="symbol-label">No (¬)</span>
+            </button>
+            <button class="btn-symbol" data-insert-type="op" data-op="AND" title="Conjunción (y / además)">
+              <span class="symbol-char" data-sym="AND">∧</span>
+              <span class="symbol-label">Y (∧)</span>
+            </button>
+            <button class="btn-symbol" data-insert-type="op" data-op="OR" title="Disyunción (o)">
+              <span class="symbol-char" data-sym="OR">∨</span>
+              <span class="symbol-label">O (∨)</span>
+            </button>
+            <button class="btn-symbol" data-insert-type="op" data-op="IMPLIES" title="Condicional (Si ... entonces)">
+              <span class="symbol-char" data-sym="IMPLIES">→</span>
+              <span class="symbol-label">Si..entonces (→)</span>
+            </button>
+            <button class="btn-symbol" data-insert-type="op" data-op="IFF" title="Bicondicional (si y solo si)">
+              <span class="symbol-char" data-sym="IFF">↔</span>
+              <span class="symbol-label">Si y solo si (↔)</span>
+            </button>
+            <button class="btn-symbol" data-insert-type="paren" data-paren="(" title="Abrir paréntesis">
+              <span>(</span>
+              <span class="symbol-label">Abre</span>
+            </button>
+            <button class="btn-symbol" data-insert-type="paren" data-paren=")" title="Cerrar paréntesis">
+              <span>)</span>
+              <span class="symbol-label">Cierra</span>
+            </button>
+          </div>
+
+          <div id="builder-quick-vars" class="flex gap-1" style="flex-wrap: wrap; margin-bottom: 1rem;">
+            <!-- Botones rápidos de variables inyectados según variables definidas -->
+          </div>
+
+          <!-- Resultados del Constructor -->
+          <div class="formula-display-box">
+            <span class="form-label" style="color: var(--accent-cyan);">Fórmula Bien Formada (FBF) Resultante:</span>
+            <div id="builder-fbf-output" class="formula-display-text">--</div>
+
+            <div style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+              <span class="form-label" style="color: var(--accent-purple);">Proposición Molecular en Lenguaje Natural:</span>
+              <p id="builder-sentence-output" class="sentence-display-text text-muted">
+                Define las proposiciones y conecta los elementos para visualizar la oración completa.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex gap-1 mt-2">
+            <button id="btn-send-to-truth" class="btn btn-primary">
+              📊 Enviar a Tabla de Verdad
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         PESTAÑA 2: PROCESO INVERSO (FBF -> Proposiciones Moleculares)
+         ========================================================================= -->
+    <section id="tab-inverse" class="tab-content hidden">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">🔄 Proceso Inverso: De FBF a Proposición Molecular</h2>
+            <p class="card-subtitle">
+              Ingresa una Fórmula Bien Formada (FBF). El sistema identificará sus variables de manera determinista y te solicitará asignarles un enunciado en español para reconstruir la proposición molecular.
+            </p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Introduce la Fórmula Bien Formada (FBF):</label>
+          <div class="flex gap-1">
+            <input type="text" id="inverse-fbf-input" class="form-input formula-input" placeholder="Ejemplo: (p ∧ q) → ¬r o p ∨ (q → r)">
+            <button id="btn-parse-inverse" class="btn btn-primary">
+              🔍 Analizar FBF
+            </button>
+          </div>
+        </div>
+
+        <!-- Teclado virtual auxiliar para escribir la FBF -->
+        <div class="symbol-keyboard">
+          <button class="btn-symbol inverse-sym-btn" data-insert="¬"><span class="symbol-char" data-sym="NOT">¬</span></button>
+          <button class="btn-symbol inverse-sym-btn" data-insert="∧"><span class="symbol-char" data-sym="AND">∧</span></button>
+          <button class="btn-symbol inverse-sym-btn" data-insert="∨"><span class="symbol-char" data-sym="OR">∨</span></button>
+          <button class="btn-symbol inverse-sym-btn" data-insert="→"><span class="symbol-char" data-sym="IMPLIES">→</span></button>
+          <button class="btn-symbol inverse-sym-btn" data-insert="↔"><span class="symbol-char" data-sym="IFF">↔</span></button>
+          <button class="btn-symbol inverse-sym-btn" data-insert="(">(</button>
+          <button class="btn-symbol inverse-sym-btn" data-insert=")">)</button>
+          <button class="btn-symbol inverse-sym-btn" data-insert="p">p</button>
+          <button class="btn-symbol inverse-sym-btn" data-insert="q">q</button>
+          <button class="btn-symbol inverse-sym-btn" data-insert="r">r</button>
+          <button class="btn-symbol inverse-sym-btn" data-insert="s">s</button>
+          <button class="btn-symbol inverse-sym-btn" data-insert="t">t</button>
+        </div>
+
+        <!-- Mapeo Determinista de Variables detectadas -->
+        <div id="inverse-variables-section" class="hidden card" style="background: rgba(15, 23, 42, 0.5); margin-top: 1.5rem;">
+          <h3 class="card-title" style="font-size: 1.05rem;">
+            📝 Asignación Determinista de Enunciados para las Variables Detectadas
+          </h3>
+          <p class="card-subtitle" style="margin-bottom: 1rem;">
+            Para garantizar el determinismo y la predictibilidad formal, especifica el significado en lenguaje natural para cada variable encontrada en tu fórmula:
+          </p>
+
+          <div id="inverse-var-inputs-list" class="atomic-list">
+            <!-- Inputs para p, q, r... generados dinámicamente -->
+          </div>
+
+          <button id="btn-generate-inverse-sentence" class="btn btn-primary mt-2">
+            ✨ Reconstruir Proposición Molecular en Español
+          </button>
+        </div>
+
+        <!-- Resultado de la Proposición Molecular -->
+        <div id="inverse-result-box" class="formula-display-box hidden">
+          <span class="form-label" style="color: var(--accent-emerald);">Proposición Molecular Reconstruida:</span>
+          <p id="inverse-result-sentence" class="sentence-display-text" style="font-size: 1.2rem;">--</p>
+          <div class="flex gap-1 mt-2">
+            <button id="btn-send-inverse-to-truth" class="btn btn-secondary">
+              📊 Ver Tabla de Verdad de esta FBF
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         PESTAÑA 3: GENERADORES ALEATORIOS
+         ========================================================================= -->
+    <section id="tab-generators" class="tab-content hidden">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <!-- Tarjeta 1: Generador Aleatorio de Proposiciones Moleculares en Lenguaje Natural -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">🎲 Proposiciones Moleculares Aleatorias</h2>
+              <p class="card-subtitle">
+                Genera oraciones compuestas en lenguaje natural con múltiples operaciones y conectivos lógicos combinados.
+              </p>
+            </div>
+          </div>
+
+          <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+            Genera oraciones coherentes aplicando la teoría de proposiciones atómicas y enlaces de conectivos lógicos en español.
+          </p>
+
+          <button id="btn-random-molecular-sentence" class="btn btn-primary" style="width: 100%;">
+            ⚡ Generar Proposición Molecular Aleatoria
+          </button>
+
+          <div id="random-sentence-display-box" class="formula-display-box hidden" style="margin-top: 1.25rem;">
+            <span class="form-label" style="color: var(--accent-cyan);">Proposición Generada:</span>
+            <p id="random-sentence-output" class="sentence-display-text" style="font-size: 1.1rem;">--</p>
+          </div>
+        </div>
+
+        <!-- Tarjeta 2: Generador Aleatorio de Fórmulas Bien Formadas (FBF) -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">📐 Fórmulas Bien Formadas (FBF) Aleatorias</h2>
+              <p class="card-subtitle">
+                Crea expresiones lógicas formales válidas con paréntesis equilibrados, incluyendo formas anidadas y largas.
+              </p>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Complejidad / Longitud deseada:</label>
+            <select id="random-fbf-complexity" class="form-input">
+              <option value="random">Aleatoria / Dinámica</option>
+              <option value="simple">Simple (1 a 2 conectivos)</option>
+              <option value="medio">Media (2 a 4 conectivos)</option>
+              <option value="largo">Larga y Anidada (4 a 7 conectivos con paréntesis)</option>
+            </select>
+          </div>
+
+          <button id="btn-random-fbf" class="btn btn-primary" style="width: 100%;">
+            ⚡ Generar FBF Aleatoria Válida
+          </button>
+
+          <div id="random-fbf-display-box" class="formula-display-box hidden" style="margin-top: 1.25rem;">
+            <span class="form-label" style="color: var(--accent-magenta);">Fórmula Bien Formada Generada:</span>
+            <div id="random-fbf-output" class="formula-display-text">--</div>
+            <div class="flex gap-1 mt-2">
+              <button id="btn-load-random-fbf-inverse" class="btn btn-secondary" style="font-size: 0.8rem;">
+                🔄 Cargar en Proceso Inverso
+              </button>
+              <button id="btn-load-random-fbf-truth" class="btn btn-secondary" style="font-size: 0.8rem;">
+                📊 Analizar en Tabla de Verdad
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         PESTAÑA 4: TABLA DE VERDAD & ÁRBOL SINTÁCTICO
+         ========================================================================= -->
+    <section id="tab-truthtable" class="tab-content hidden">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">📊 Análisis Lógico: Tabla de Verdad y Árbol Sintáctico</h2>
+            <p class="card-subtitle">
+              Calcula todas las 2<sup>n</sup> combinaciones posibles, evalúa columnas intermedias y diagnostica Tautología, Contradicción o Contingencia.
+            </p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Fórmula Bien Formada a evaluar:</label>
+          <div class="flex gap-1">
+            <input type="text" id="truth-fbf-input" class="form-input formula-input" placeholder="Ejemplo: (p ∧ q) → (¬r ∨ p)">
+            <button id="btn-generate-truth-table" class="btn btn-primary">
+              ⚡ Generar Análisis Completo
+            </button>
+          </div>
+        </div>
+
+        <!-- Resultados de la Tabla de Verdad -->
+        <div id="truth-results-container" class="hidden">
+          <!-- Banner de Diagnóstico (Tautología / Contradicción / Contingencia) -->
+          <div id="truth-classification-banner" class="truth-classification-banner">
+            <div>
+              <h3 id="truth-class-title" style="font-size: 1.2rem; font-weight: 800;">DIAGNÓSTICO</h3>
+              <p id="truth-class-desc" style="font-size: 0.95rem; margin-top: 0.25rem;">Explicación...</p>
+            </div>
+          </div>
+
+          <!-- Tabla HTML de Verdad -->
+          <div class="table-responsive">
+            <table class="truth-table" id="rendered-truth-table">
+              <!-- Inyectado dinámicamente -->
+            </table>
+          </div>
+
+          <!-- Árbol Sintáctico Visual -->
+          <div style="margin-top: 2rem;">
+            <h3 class="card-title" style="font-size: 1.1rem; margin-bottom: 0.5rem;">
+              🌳 Desglose Jerárquico (Árbol Sintáctico de la FBF)
+            </h3>
+            <p class="card-subtitle" style="margin-bottom: 1rem;">
+              Muestra la estructura gramatical formal, identificando el conectivo principal y las subfórmulas dependientes.
+            </p>
+            <div id="syntax-tree-rendered" class="tree-container tree">
+              <!-- Árbol inyectado dinámicamente -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         PESTAÑA 5: ADMINISTRACIÓN (Solo visible para admin)
+         ========================================================================= -->
+    <section id="tab-admin" class="tab-content hidden">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">🛡️ Panel de Control y Configuración del Administrador</h2>
+            <p class="card-subtitle">
+              Gestiona el aforo máximo de perfiles, supervisa usuarios registrados y establece políticas de notación simbólica.
+            </p>
+          </div>
+          <span class="badge badge-admin">Acceso Privilegiado</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          <!-- Bloque de Aforo de Usuarios -->
+          <div class="card" style="background: rgba(15, 23, 42, 0.4);">
+            <h3 class="card-title" style="font-size: 1.05rem;">👥 Control de Capacidad Máxima de Usuarios</h3>
+            <p class="card-subtitle" style="margin-bottom: 1rem;">
+              Fija el número máximo de perfiles que pueden coexistir en la base de datos local.
+            </p>
+
+            <div class="form-group">
+              <label class="form-label">Límite Máximo de Usuarios:</label>
+              <input type="number" id="admin-input-capacity" class="form-input" min="1" max="100" value="5">
+            </div>
+
+            <button id="btn-admin-save-capacity" class="btn btn-primary">
+              💾 Guardar Nuevo Límite de Aforo
+            </button>
+
+            <p class="text-muted" style="font-size: 0.8rem; margin-top: 0.75rem;">
+              ℹ️ Si un nuevo usuario intenta registrarse cuando el cupo esté lleno, el sistema le informará con el error de espera obligatorio.
+            </p>
+          </div>
+
+          <!-- Bloque de Notación Forzada -->
+          <div class="card" style="background: rgba(15, 23, 42, 0.4);">
+            <h3 class="card-title" style="font-size: 1.05rem;">🔒 Política de Notación de Conectivos</h3>
+            <p class="card-subtitle" style="margin-bottom: 1rem;">
+              El administrador puede bloquear la notación para forzar a todos los usuarios a emplear una simbología fija.
+            </p>
+
+            <div class="form-group">
+              <label class="form-label">Restricción de Simbología:</label>
+              <select id="admin-notation-lock-select" class="form-input">
+                <option value="none">Libre (El usuario puede elegir entre Estándar o Alternativa)</option>
+                <option value="standard">Forzar Notación Estándar (¬, ∧, ∨, →, ↔)</option>
+                <option value="alternative">Forzar Notación Alternativa (~, &, ∨, ⊃, ≡)</option>
+              </select>
+            </div>
+
+            <button id="btn-admin-save-notation" class="btn btn-primary">
+              💾 Aplicar Regla de Notación
+            </button>
+          </div>
+        </div>
+
+        <!-- Lista de Usuarios Registrados en Base de Datos Local -->
+        <div style="margin-top: 1.5rem;">
+          <h3 class="card-title" style="font-size: 1.05rem; margin-bottom: 0.75rem;">
+            📋 Usuarios Registrados en la Base de Datos Local
+          </h3>
+          <div class="table-responsive">
+            <table class="truth-table" style="text-align: left;">
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Rol</th>
+                  <th>Fecha de Creación</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody id="admin-users-table-body">
+                <!-- Inyectado dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- =========================================================================
+       MODAL DE AUTENTICACIÓN (LOGIN / REGISTRO / ELIMINACIÓN DE PERFILES)
+       ========================================================================= -->
+  <div id="auth-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div class="brand-icon" style="margin: 0 auto 0.75rem auto;">∧∨</div>
+        <h2 style="font-size: 1.4rem; font-weight: 700;">Acceso al Sistema</h2>
+        <p class="text-muted" style="font-size: 0.85rem;">Software de Lógica Simbólica</p>
+      </div>
+
+      <!-- Pestañas del Modal -->
+      <div class="nav-tabs" style="margin-bottom: 1.25rem;">
+        <button class="nav-tab active" id="auth-tab-btn-login" data-auth-mode="login">
+          Ingresar
+        </button>
+        <button class="nav-tab" id="auth-tab-btn-register" data-auth-mode="register">
+          Crear Perfil
+        </button>
+        <button class="nav-tab" id="auth-tab-btn-delete" data-auth-mode="delete" style="color: var(--accent-rose);">
+          Eliminar Perfil
+        </button>
+      </div>
+
+      <!-- VISTA 1: INICIAR SESIÓN -->
+      <form id="form-login" class="auth-subform">
+        <div class="form-group">
+          <label class="form-label">Nombre de Usuario:</label>
+          <input type="text" id="login-username" class="form-input" required autocomplete="username" placeholder="admin o tu usuario">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contraseña:</label>
+          <input type="password" id="login-password" class="form-input" required autocomplete="current-password" placeholder="••••">
+        </div>
+        <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); font-size: 0.8rem; margin-bottom: 1rem;">
+          💡 Perfil Admin inicial: usuario: <strong>admin</strong> | contraseña: <strong>1234</strong>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+          Iniciar Sesión
+        </button>
+      </form>
+
+      <!-- VISTA 2: CREAR PERFIL (REGISTRO) -->
+      <form id="form-register" class="auth-subform hidden">
+        <div id="register-capacity-warning" class="hidden" style="background: rgba(244, 63, 94, 0.15); border: 1px solid var(--accent-rose); color: #fff; padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.85rem; margin-bottom: 1rem;">
+          ⚠️ <strong>Aforo Lleno:</strong> Ya se ha alcanzado la capacidad máxima de usuarios y deberá esperar a que se libere un espacio para crear el suyo.
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nuevo Usuario:</label>
+          <input type="text" id="register-username" class="form-input" required placeholder="Ingresa tu nombre o ID">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contraseña:</label>
+          <input type="password" id="register-password" class="form-input" required placeholder="Crea tu contraseña">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirmar Contraseña:</label>
+          <input type="password" id="register-confirm-password" class="form-input" required placeholder="Repite tu contraseña">
+        </div>
+        <div class="text-muted" id="register-capacity-status" style="font-size: 0.8rem; margin-bottom: 1rem;">
+          Estado de capacidad: calculando...
+        </div>
+        <button type="submit" id="btn-submit-register" class="btn btn-primary" style="width: 100%;">
+          Crear Perfil
+        </button>
+      </form>
+
+      <!-- VISTA 3: ELIMINAR PERFIL (Con selección y contraseña, protección absoluta de admin) -->
+      <form id="form-delete-profile" class="auth-subform hidden">
+        <div style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.8rem; color: #fecdd3; margin-bottom: 1rem;">
+          🛡️ <strong>Seguridad Estricta:</strong> Selecciona el perfil que deseas dar de baja e introduce su contraseña para confirmar. El perfil de <strong>administrador está protegido</strong> y no puede ser eliminado bajo ninguna circunstancia.
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Seleccionar Perfil a Eliminar:</label>
+          <select id="delete-user-select" class="form-input" required>
+            <!-- Lista de usuarios no admin inyectados dinámicamente -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Contraseña del Perfil Seleccionado:</label>
+          <input type="password" id="delete-user-password" class="form-input" required placeholder="Introduce la contraseña para confirmar">
+        </div>
+
+        <button type="submit" class="btn btn-danger" style="width: 100%;">
+          🗑️ Eliminar Perfil Definitivamente
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Contenedor de Notificaciones Toast -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Script Principal de la Aplicación -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
