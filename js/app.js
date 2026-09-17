@@ -750,15 +750,37 @@ function initTruthTableAndTree() {
 
 function renderTruthTable(data) {
   const table = document.getElementById('rendered-truth-table');
+  const tableWrapper = document.getElementById('truth-table-wrapper') || table?.parentElement;
   const banner = document.getElementById('truth-classification-banner');
   const title = document.getElementById('truth-class-title');
   const desc = document.getElementById('truth-class-desc');
+  const limitMsg = document.getElementById('truth-table-limit-message');
+  const limitText = document.getElementById('truth-table-limit-text');
 
-  if (!table) return;
+  if (!table || !banner) return;
 
+  // Actualizar diagnóstico formal (siempre visible y calculado con exactitud)
   banner.className = `truth-classification-banner banner-${data.classification.toLowerCase()}`;
   title.textContent = `DIAGNÓSTICO FORMAL: ${data.classification}`;
   desc.textContent = data.description;
+
+  // Evaluar si se está trabajando con más de 6 proposiciones
+  if (data.variables && data.variables.length > 6) {
+    // Ocultar la tabla y mostrar en su lugar el mensaje de error solicitado
+    if (tableWrapper) tableWrapper.classList.add('hidden');
+    table.innerHTML = '';
+    if (limitMsg) {
+      if (limitText) {
+        limitText.textContent = 'La tabla solo puede aparecer cuando se estan operando 6 o menos preposiciones.';
+      }
+      limitMsg.classList.remove('hidden');
+    }
+    return;
+  }
+
+  // Si son 6 o menos proposiciones, ocultar el aviso de error y mostrar la tabla de verdad
+  if (limitMsg) limitMsg.classList.add('hidden');
+  if (tableWrapper) tableWrapper.classList.remove('hidden');
 
   let theadHTML = '<thead><tr><th>#</th>';
   data.variables.forEach(v => {
@@ -784,7 +806,7 @@ function renderTruthTable(data) {
     });
 
     const finalCls = r.finalResult === 'V' ? 'val-v' : 'val-f';
-    tbodyHTML += `<td class="${finalCls}" style="font-weight: 800; font-size: 1.1rem; background: rgba(56, 189, 248, 0.08);">${r.finalResult}</td></tr>`;
+    tbodyHTML += `<td class="${finalCls}" style="font-weight: 800; font-size: 1.1rem;">${r.finalResult}</td></tr>`;
   });
   tbodyHTML += '</tbody>';
 

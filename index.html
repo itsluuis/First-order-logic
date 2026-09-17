@@ -233,7 +233,7 @@
         </div>
 
         <!-- Mapeo Determinista de Variables detectadas -->
-        <div id="inverse-variables-section" class="hidden card" style="background: rgba(15, 23, 42, 0.5); margin-top: 1.5rem;">
+        <div id="inverse-variables-section" class="hidden card card-subtle" style="margin-top: 1.5rem;">
           <div class="card-header" style="margin-bottom: 0.75rem; padding-bottom: 0.5rem;">
             <div>
               <h3 class="card-title" style="font-size: 1.05rem;">
@@ -310,8 +310,14 @@
             </div>
           </div>
 
+          <!-- Mensaje de límite cuando se opera con más de 6 proposiciones -->
+          <div id="truth-table-limit-message" class="truth-table-limit-card hidden">
+            <span>⚠️</span>
+            <span id="truth-table-limit-text">La tabla solo puede aparecer cuando se estan operando 6 o menos preposiciones.</span>
+          </div>
+
           <!-- Tabla HTML de Verdad -->
-          <div class="table-responsive">
+          <div class="table-responsive" id="truth-table-wrapper">
             <table class="truth-table" id="rendered-truth-table">
               <!-- Inyectado dinámicamente -->
             </table>
@@ -350,7 +356,7 @@
 
         <div style="max-width: 650px;">
           <!-- Bloque de Notación Forzada -->
-          <div class="card" style="background: rgba(15, 23, 42, 0.4);">
+          <div class="card card-subtle">
             <h3 class="card-title" style="font-size: 1.05rem;">🔒 Política de Notación de Conectivos</h3>
             <p class="card-subtitle" style="margin-bottom: 1.25rem;">
               Puedes permitir que los usuarios elijan la notación libremente o bloquear la simbología para forzar una única notación en toda la plataforma.

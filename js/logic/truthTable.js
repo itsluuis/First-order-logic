@@ -71,7 +71,7 @@ export class TruthTableEngine {
   }
 
   /**
-   * Genera la tabla de verdad completa.
+   * Genera la tabla de verdad completa o el diagnóstico formal si excede 6 proposiciones.
    */
   static generate(ast, notation = NOTATION_MODES.STANDARD) {
     const variables = FBFParser.getVariables(ast);
@@ -81,16 +81,63 @@ export class TruthTableEngine {
       throw new Error('No se encontraron variables proposicionales para evaluar.');
     }
 
-    if (n > 6) {
-      throw new Error(`La fórmula contiene ${n} variables (requiere ${Math.pow(2, n)} filas). El límite pedagógico recomendado es de hasta 6 variables.`);
+    if (n > 12) {
+      throw new Error(`La fórmula contiene ${n} variables. El límite máximo de evaluación es de 12 variables.`);
     }
 
+    const fullExprStr = FBFParser.toString(ast, notation, false);
     const totalRows = Math.pow(2, n);
+
+    // Si tiene más de 6 proposiciones, evaluamos el diagnóstico formal
+    // sin generar el arreglo masivo de filas HTML de la tabla
+    if (n > 6) {
+      let trueCount = 0;
+      let falseCount = 0;
+
+      for (let r = 0; r < totalRows; r++) {
+        const assignment = {};
+        for (let i = 0; i < n; i++) {
+          const period = Math.pow(2, n - 1 - i);
+          assignment[variables[i]] = Math.floor(r / period) % 2 === 0;
+        }
+
+        const res = this.evaluate(ast, assignment);
+        if (res) trueCount++;
+        else falseCount++;
+      }
+
+      let classification = 'CONTINGENCIA';
+      let description = 'La fórmula es una Contingencia: su valor de verdad depende de los valores de las proposiciones atómicas (contiene tanto valores Verdaderos como Falsos).';
+
+      if (trueCount === totalRows) {
+        classification = 'TAUTOLOGÍA';
+        description = 'La fórmula es una Tautología: es universalmente Verdadera (V) bajo cualquier interpretación de sus variables proposicionales.';
+      } else if (falseCount === totalRows) {
+        classification = 'CONTRADICCIÓN';
+        description = 'La fórmula es una Contradicción: es universalmente Falsa (F) bajo cualquier interpretación de sus variables proposicionales.';
+      }
+
+      return {
+        variables,
+        intermediateColumns: [],
+        fullExprStr,
+        totalRows,
+        rows: [],
+        stats: {
+          trueCount,
+          falseCount
+        },
+        classification,
+        description,
+        limitExceeded: true,
+        errorMessage: 'La tabla solo puede aparecer cuando se estan operando 6 o menos preposiciones.'
+      };
+    }
+
     const rows = [];
 
     // Obtener subexpresiones intermedias y la expresión principal
     const subExpressions = this.getSubExpressions(ast, notation);
-    const fullExprStr = FBFParser.toString(ast, notation, false);
 
     // Asegurar que la expresión principal esté al final como columna resultado
     const intermediateColumns = subExpressions.filter(s => s.str !== fullExprStr);
@@ -162,7 +209,8 @@ export class TruthTableEngine {
         falseCount
       },
       classification,
-      description
+      description,
+      limitExceeded: false
     };
   }
 }
