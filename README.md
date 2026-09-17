@@ -30,8 +30,8 @@ El sistema cuenta con 3 perfiles dedicados para evitar confusiones y garantizar 
 
 ### 4. Herramientas Pedagógicas de Análisis Lógico
 - **Tabla de Verdad Exhaustiva**:
-  - Calcula automáticamente todas las $2^n$ filas de combinaciones de verdad.
-  - Muestra columnas intermedias de evaluación paso a paso.
+  - Calcula automáticamente todas las $2^n$ combinaciones de verdad.
+  - Muestra columnas intermedias de evaluación paso a paso para fórmulas de hasta 6 proposiciones atómicas. Cuando se operan más de 6 proposiciones, la tabla visual se sustituye por un aviso pedagógico indicando este límite, manteniendo siempre visible el cálculo del diagnóstico formal.
   - Diagnóstico formal automático: **TAUTOLOGÍA**, **CONTRADICCIÓN** o **CONTINGENCIA**.
 - **Árbol Sintáctico Jerárquico**:
   - Representación gráfica en árbol que desglosa el conectivo principal, los operadores secundarios y las proposiciones atómicas.
