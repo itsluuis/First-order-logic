@@ -1,7 +1,8 @@
 /**
- * mascotView.js - Renderizado Visual de la Mascota Robótica OLED (SVG + CSS)
+ * mascotView.js - Renderizado Visual de la Mascota Robótica OLED "Moli" (SVG + CSS)
  * Basado fielmente en la referencia visual de pantalla tipo píldora/visor con ojos vectoriales
- * dinámicos y expresivos (^ ^, X X, > <, _ _, etc.), auto-cierre a 4 segundos y docking dinámico.
+ * dinámicos y expresivos (^ ^, X X, mirada escéptica de foto, vacilando izq/der, zzz y despertar),
+ * desplazamiento/vuelo en pantalla al acoplar/desacoplar, auto-cierre a 4 segundos y docking dinámico.
  */
 
 export class MascotView {
@@ -9,13 +10,14 @@ export class MascotView {
     this.container = document.getElementById(containerId);
     this.currentExpression = 'idle';
     this.isBubbleOpen = false;
-    this.blinkTimer = null;
+    this.idleTimer = null;
+    this.activeIdleActionTimer = null;
     this.autoCloseTimer = null;
     this.onMascotClick = null;
     this.onBubbleClose = null;
 
     this._initDOM();
-    this._startBlinking();
+    this._startIdleCycle();
   }
 
   _initDOM() {
@@ -32,18 +34,26 @@ export class MascotView {
         <div class="mascot-bubble-header">
           <div class="mascot-bubble-title">
             <span class="mascot-status-dot"></span>
-            <strong>Boleano</strong>
+            <strong>Moli</strong>
             <span class="mascot-role-tag">Tutor IA</span>
           </div>
         </div>
         <div id="mascot-bubble-body" class="mascot-bubble-content">
-          Soy <strong>Boleano</strong>. Haz clic sobre mí en cualquier momento si tienes dudas o necesitas una explicación lógica.
+          Soy <strong>Moli</strong>. Haz clic sobre mí en cualquier momento si tienes dudas o necesitas una explicación lógica.
         </div>
       </div>
 
       <!-- Cuerpo del Visor Robótico OLED -->
-      <div id="mascot-visor" class="mascot-visor" title="Haz clic para pedir una explicación a Boleano">
+      <div id="mascot-visor" class="mascot-visor" title="Haz clic para pedir una explicación a Moli">
         <div class="mascot-screen-glow"></div>
+
+        <!-- Letras ZZZ flotantes cuando duerme -->
+        <div id="mascot-zzz-container" class="mascot-zzz-container hidden">
+          <span class="zzz zzz-1">z</span>
+          <span class="zzz zzz-2">z</span>
+          <span class="zzz zzz-3">Z</span>
+        </div>
+
         <svg id="mascot-eyes-svg" class="mascot-eyes-svg" viewBox="0 0 160 80" xmlns="http://www.w3.org/2000/svg">
           <g id="mascot-left-eye" class="mascot-eye"></g>
           <g id="mascot-right-eye" class="mascot-eye"></g>
@@ -64,41 +74,107 @@ export class MascotView {
   }
 
   /**
-   * Acopla la mascota dentro de un contenedor específico (Centro de Prácticas o Resumen)
+   * Acopla la mascota dentro de un contenedor con animación de desplazamiento/vuelo en pantalla
    */
   dockTo(targetElement) {
     if (!targetElement || !this.visor) return;
+    if (this.visor.parentElement === targetElement) return;
+
+    // 1. Coordenadas iniciales en viewport
+    const firstRect = this.visor.getBoundingClientRect();
+
+    // 2. Mover en el DOM al slot destino
     targetElement.innerHTML = '';
     targetElement.appendChild(this.visor);
     this.visor.classList.add('docked');
-  }
 
-  /**
-   * Regresa la mascota a su contenedor flotante en la esquina inferior derecha
-   */
-  undock() {
-    if (!this.container || !this.visor) return;
-    if (this.visor.parentElement !== this.container) {
-      this.container.appendChild(this.visor);
-      this.visor.classList.remove('docked');
+    // 3. Coordenadas finales en viewport
+    const lastRect = this.visor.getBoundingClientRect();
+
+    // 4. Calcular delta de vuelo (técnica FLIP)
+    const deltaX = firstRect.left - lastRect.left;
+    const deltaY = firstRect.top - lastRect.top;
+
+    if (Math.hypot(deltaX, deltaY) > 8) {
+      this.visor.classList.add('gliding');
+      this.visor.style.transition = 'none';
+      this.visor.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(0.92)`;
+      void this.visor.offsetWidth; // Forzar reflow
+
+      // Vuelo fluido con curva de aceleración robótica
+      this.visor.style.transition = 'transform 0.65s cubic-bezier(0.25, 1.25, 0.5, 1)';
+      this.visor.style.transform = 'translate(0, 0) scale(1)';
+
+      setTimeout(() => {
+        this.visor.classList.remove('gliding');
+        this.visor.style.transition = '';
+        this.visor.style.transform = '';
+      }, 680);
     }
   }
 
   /**
-   * Cambia la expresión facial de la mascota
-   * @param {string} expr - 'idle' | 'happy' | 'dizzy' | 'thinking' | 'sleepy' | 'battle' | 'wink'
+   * Regresa la mascota a su contenedor flotante con animación de vuelo en pantalla
+   */
+  undock() {
+    if (!this.container || !this.visor) return;
+    if (this.visor.parentElement === this.container) return;
+
+    // 1. Coordenadas iniciales desde el slot acoplado
+    const firstRect = this.visor.getBoundingClientRect();
+
+    // 2. Mover en el DOM al contenedor flotante global
+    this.container.appendChild(this.visor);
+    this.visor.classList.remove('docked');
+
+    // 3. Coordenadas finales en esquina inferior derecha
+    const lastRect = this.visor.getBoundingClientRect();
+
+    // 4. Calcular delta de vuelo
+    const deltaX = firstRect.left - lastRect.left;
+    const deltaY = firstRect.top - lastRect.top;
+
+    if (Math.hypot(deltaX, deltaY) > 8) {
+      this.visor.classList.add('gliding');
+      this.visor.style.transition = 'none';
+      this.visor.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(0.92)`;
+      void this.visor.offsetWidth; // Forzar reflow
+
+      this.visor.style.transition = 'transform 0.65s cubic-bezier(0.25, 1.25, 0.5, 1)';
+      this.visor.style.transform = 'translate(0, 0) scale(1)';
+
+      setTimeout(() => {
+        this.visor.classList.remove('gliding');
+        this.visor.style.transition = '';
+        this.visor.style.transform = '';
+      }, 680);
+    }
+  }
+
+  /**
+   * Cambia la expresión facial de Moli
+   * @param {string} expr - 'idle' | 'happy' | 'dizzy' | 'thinking' | 'sleepy' | 'battle' | 'wink' | 'skeptical' | 'look-left' | 'look-right' | 'surprised'
    */
   setExpression(expr) {
     this.currentExpression = expr;
     const leftEye = document.getElementById('mascot-left-eye');
     const rightEye = document.getElementById('mascot-right-eye');
     const visor = document.getElementById('mascot-visor');
+    const zzz = document.getElementById('mascot-zzz-container');
 
     if (!leftEye || !rightEye || !visor) return;
 
+    // Mostrar ZZZ únicamente en modo sleepy
+    if (expr === 'sleepy') {
+      zzz?.classList.remove('hidden');
+    } else {
+      zzz?.classList.add('hidden');
+    }
+
     // Resetear clases de animación
     const isDocked = visor.classList.contains('docked');
-    visor.className = `mascot-visor expr-${expr}${isDocked ? ' docked' : ''}`;
+    const isGliding = visor.classList.contains('gliding');
+    visor.className = `mascot-visor expr-${expr}${isDocked ? ' docked' : ''}${isGliding ? ' gliding' : ''}`;
 
     switch (expr) {
       case 'happy': // Ojos tipo arcos felices: ^ ^
@@ -122,7 +198,7 @@ export class MascotView {
         `;
         break;
 
-      case 'thinking': // Cejas inclinadas con ojos rectangulares concentrados (fila 2 de referencia)
+      case 'thinking': // Cejas inclinadas con ojos rectangulares concentrados
         leftEye.innerHTML = `
           <line x1="28" y1="24" x2="72" y2="34" stroke="currentColor" stroke-width="9" stroke-linecap="round"/>
           <rect x="36" y="38" width="28" height="28" rx="8" fill="currentColor"/>
@@ -144,9 +220,35 @@ export class MascotView {
         `;
         break;
 
-      case 'sleepy': // Líneas inferiores semicerradas _ _
-        leftEye.innerHTML = `<path d="M 32,48 Q 50,62 68,48" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"/>`;
-        rightEye.innerHTML = `<path d="M 92,48 Q 110,62 128,48" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"/>`;
+      case 'sleepy': // Ojos adormilados con párpados pesados semicerrados
+        leftEye.innerHTML = `<path d="M 32,48 Q 50,60 68,48" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"/>`;
+        rightEye.innerHTML = `<path d="M 92,48 Q 110,60 128,48" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"/>`;
+        break;
+
+      case 'surprised': // Ojos abiertos de par en par (sobresalto al despertar)
+        leftEye.innerHTML = `<circle cx="48" cy="42" r="20" fill="currentColor"/>`;
+        rightEye.innerHTML = `<circle cx="108" cy="42" r="20" fill="currentColor"/>`;
+        break;
+
+      case 'skeptical': // Cara de la foto: ojo izquierdo entrecerrado con ceja en bajada, ojo derecho atento con ceja alzada
+        leftEye.innerHTML = `
+          <path d="M 22,50 L 66,36" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
+          <path d="M 32,44 L 64,36 L 64,52 Q 64,58 56,58 L 40,58 Q 32,58 32,52 Z" fill="currentColor"/>
+        `;
+        rightEye.innerHTML = `
+          <path d="M 94,30 L 138,20" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
+          <path d="M 96,30 L 126,24 L 126,52 Q 126,58 120,58 L 102,58 Q 96,58 96,52 Z" fill="currentColor"/>
+        `;
+        break;
+
+      case 'look-left': // Mira a la izquierda como vacilando/curioseando
+        leftEye.innerHTML = `<rect class="eye-pill" x="26" y="22" width="24" height="44" rx="10" fill="currentColor"/>`;
+        rightEye.innerHTML = `<rect class="eye-pill" x="86" y="22" width="24" height="44" rx="10" fill="currentColor"/>`;
+        break;
+
+      case 'look-right': // Mira a la derecha como vacilando/curioseando
+        leftEye.innerHTML = `<rect class="eye-pill" x="50" y="22" width="24" height="44" rx="10" fill="currentColor"/>`;
+        rightEye.innerHTML = `<rect class="eye-pill" x="110" y="22" width="24" height="44" rx="10" fill="currentColor"/>`;
         break;
 
       case 'wink': // Guiño ; )
@@ -155,7 +257,7 @@ export class MascotView {
         break;
 
       case 'idle':
-      default: // Ojos estándar tipo píldoras verticales con esquinas suaves
+      default: // Ojos estándar tipo píldoras verticales centradas
         leftEye.innerHTML = `<rect class="eye-pill" x="38" y="22" width="24" height="44" rx="10" fill="currentColor"/>`;
         rightEye.innerHTML = `<rect class="eye-pill" x="98" y="22" width="24" height="44" rx="10" fill="currentColor"/>`;
         break;
@@ -163,24 +265,88 @@ export class MascotView {
   }
 
   /**
-   * Animación de pestañeo espontáneo
+   * Pestañeo puntual
    */
-  _startBlinking() {
-    const triggerBlink = () => {
-      if (this.currentExpression === 'idle') {
-        const svg = document.getElementById('mascot-eyes-svg');
-        if (svg) {
-          svg.classList.add('blinking');
-          setTimeout(() => {
-            svg.classList.remove('blinking');
-          }, 180);
-        }
+  _triggerBlink() {
+    const svg = document.getElementById('mascot-eyes-svg');
+    if (svg && this.currentExpression === 'idle') {
+      svg.classList.add('blinking');
+      setTimeout(() => svg.classList.remove('blinking'), 180);
+    }
+  }
+
+  /**
+   * Máquina de estados ociosa (Idle State Machine)
+   * Alterna fluidamente entre parpadeos, vacilar izq/der, cara escéptica de foto, y zzz con despertar
+   */
+  _startIdleCycle() {
+    const runNextIdle = () => {
+      // Si hay un globo abierto o una expresión activa no-idle, pausar ciclo
+      if (this.currentExpression !== 'idle' || this.isBubbleOpen) {
+        this.idleTimer = setTimeout(runNextIdle, 3000);
+        return;
       }
-      const nextTime = Math.random() * 3500 + 2500;
-      this.blinkTimer = setTimeout(triggerBlink, nextTime);
+
+      const rand = Math.random();
+
+      if (rand < 0.35) {
+        // Rutina 1: Pestañeo simple o doble
+        this._triggerBlink();
+        if (Math.random() < 0.35) {
+          setTimeout(() => this._triggerBlink(), 260);
+        }
+        this.idleTimer = setTimeout(runNextIdle, Math.random() * 3000 + 2500);
+
+      } else if (rand < 0.60) {
+        // Rutina 2: Mirar a la izquierda y derecha como vacilando
+        this.setExpression('look-left');
+        this.activeIdleActionTimer = setTimeout(() => {
+          if (this.currentExpression === 'look-left') {
+            this.setExpression('look-right');
+            this.activeIdleActionTimer = setTimeout(() => {
+              if (this.currentExpression === 'look-right') {
+                this.setExpression('idle');
+                this._triggerBlink();
+              }
+              this.idleTimer = setTimeout(runNextIdle, Math.random() * 3500 + 3000);
+            }, 900);
+          }
+        }, 900);
+
+      } else if (rand < 0.82) {
+        // Rutina 3: Cara escéptica de la foto (ceja alzada)
+        this.setExpression('skeptical');
+        this.activeIdleActionTimer = setTimeout(() => {
+          if (this.currentExpression === 'skeptical') {
+            this.setExpression('idle');
+            this._triggerBlink();
+          }
+          this.idleTimer = setTimeout(runNextIdle, Math.random() * 4000 + 3200);
+        }, 2200);
+
+      } else {
+        // Rutina 4: Mostrar zzz y luego despertar sobresaltado
+        this.setExpression('sleepy');
+        this.activeIdleActionTimer = setTimeout(() => {
+          if (this.currentExpression === 'sleepy') {
+            // Despertar sobresaltado
+            this.setExpression('surprised');
+            const visor = document.getElementById('mascot-visor');
+            visor?.classList.add('waking-up');
+
+            setTimeout(() => {
+              visor?.classList.remove('waking-up');
+              this.setExpression('idle');
+              this._triggerBlink();
+              setTimeout(() => this._triggerBlink(), 240);
+              this.idleTimer = setTimeout(runNextIdle, Math.random() * 4000 + 3000);
+            }, 750);
+          }
+        }, 3200);
+      }
     };
 
-    this.blinkTimer = setTimeout(triggerBlink, 3000);
+    this.idleTimer = setTimeout(runNextIdle, 3000);
   }
 
   /**
@@ -191,17 +357,37 @@ export class MascotView {
     const body = document.getElementById('mascot-bubble-body');
     if (!bubble || !body) return;
 
+    if (this.activeIdleActionTimer) {
+      clearTimeout(this.activeIdleActionTimer);
+      this.activeIdleActionTimer = null;
+    }
+
     if (this.autoCloseTimer) {
       clearTimeout(this.autoCloseTimer);
       this.autoCloseTimer = null;
     }
 
     body.innerHTML = contentHtml;
+
+    // Si la mascota está acoplada en una tarjeta, posicionar el globo justo encima
+    if (this.visor && this.visor.classList.contains('docked')) {
+      const rect = this.visor.getBoundingClientRect();
+      bubble.style.position = 'fixed';
+      bubble.style.bottom = `${Math.max(20, window.innerHeight - rect.top + 14)}px`;
+      bubble.style.left = `${Math.max(16, rect.left - 40)}px`;
+      bubble.style.right = 'auto';
+    } else {
+      bubble.style.position = '';
+      bubble.style.bottom = '';
+      bubble.style.left = '';
+      bubble.style.right = '';
+    }
+
     bubble.classList.remove('hidden');
     this.isBubbleOpen = true;
 
     // Sonreír brevemente al abrir el globo
-    if (this.currentExpression === 'idle') {
+    if (this.currentExpression === 'idle' || this.currentExpression === 'sleepy' || this.currentExpression === 'skeptical') {
       this.setExpression('happy');
       setTimeout(() => {
         if (this.isBubbleOpen && this.currentExpression === 'happy') {
@@ -229,6 +415,10 @@ export class MascotView {
     if (!bubble) return;
 
     bubble.classList.add('hidden');
+    bubble.style.position = '';
+    bubble.style.bottom = '';
+    bubble.style.left = '';
+    bubble.style.right = '';
     this.isBubbleOpen = false;
 
     if (this.currentExpression === 'happy' || this.currentExpression === 'wink') {

@@ -56,6 +56,14 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), 0 0 20px rgba(56, 189, 248, 0.35);
 }
 
+/* Animación de desplazamiento/vuelo en pantalla al acoplar o desacoplar */
+.mascot-visor.gliding {
+  z-index: 10000 !important;
+  pointer-events: none !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.95), 0 0 45px rgba(56, 189, 248, 0.8) !important;
+  border-color: #38bdf8 !important;
+}
+
 .mascot-dock-slot {
   width: 190px;
   height: 104px;
@@ -80,7 +88,7 @@
   height: 72px;
   color: #38bdf8;
   filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.9));
-  transition: color 0.3s ease, filter 0.3s ease;
+  transition: color 0.3s ease, filter 0.3s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Expresiones dinámicas */
@@ -113,6 +121,67 @@
 }
 .mascot-visor.expr-battle {
   border-color: rgba(192, 132, 252, 0.65);
+}
+
+/* Expresión Escéptica / Inquisitiva (Foto de referencia del usuario con ceja alzada) */
+.mascot-visor.expr-skeptical {
+  border-color: rgba(56, 189, 248, 0.65);
+  animation: mascotSkepticalTilt 2.2s ease;
+}
+.mascot-visor.expr-skeptical .mascot-eyes-svg {
+  color: #38bdf8;
+  filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.95));
+}
+
+@keyframes mascotSkepticalTilt {
+  0%, 100% { transform: rotate(0deg); }
+  20%, 80% { transform: rotate(-3.5deg) translateY(-2px); }
+}
+
+/* Despertar sobresaltado */
+.mascot-visor.waking-up {
+  animation: mascotWakeUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes mascotWakeUp {
+  0% { transform: translateY(0) scale(0.96); }
+  35% { transform: translateY(-9px) scale(1.08); }
+  65% { transform: translateY(2px) scale(0.98); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* Letras flotantes ZZZ cuando duerme */
+.mascot-zzz-container {
+  position: absolute;
+  top: 8px;
+  right: 24px;
+  display: flex;
+  gap: 3px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.mascot-zzz-container.hidden {
+  display: none;
+}
+
+.zzz {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  color: #38bdf8;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.9);
+  opacity: 0;
+  animation: zzzDrift 2.2s infinite ease-out;
+}
+.zzz-1 { font-size: 11px; animation-delay: 0s; }
+.zzz-2 { font-size: 14px; animation-delay: 0.6s; }
+.zzz-3 { font-size: 18px; animation-delay: 1.2s; }
+
+@keyframes zzzDrift {
+  0% { opacity: 0; transform: translate(0, 6px) scale(0.6); }
+  35% { opacity: 0.95; }
+  75% { opacity: 0.8; }
+  100% { opacity: 0; transform: translate(12px, -20px) scale(1.15); }
 }
 
 /* Animación de parpadeo */

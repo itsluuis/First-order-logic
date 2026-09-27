@@ -45,10 +45,10 @@ Pestaña interactiva con menú de tarjetas Bento/Glassmorphism que se amplían (
 - 🌳 **Árbol Correcto:** Identifica la FBF generada por el árbol sintáctico entre 4 opciones. Si fallas, la opción se atenúa y te permite seguir probando hasta acertar o expirar el tiempo. Tiempos: Fácil (2:00 min), Normal (1:30 min), Difícil (0:30 min).
 - 🧩 **Moleculares:** Lee enunciados en lenguaje natural y construye la FBF con bloques de tokens interactivos. Permite corregir hasta acertar. Tiempos: Fácil (5:00 min), Normal (2:30 min), Difícil (1:30 min).
 - ⚖️ **Veredicto:** Deduce a toda velocidad si la fórmula es Tautología, Contradicción o Contingencia. Acierto: +1 punto. Fallo: -1 punto (tope inferior garantizado en 0) y salta de inmediato a la siguiente.
-- ⚡ **Duelo contra la Mascota IA:** Compite contra Boleano determinando si una fórmula es Verdadera o Falsa bajo asignaciones atómicas dadas. La IA evalúa la fórmula en tiempo real, simula tiempo de pensamiento y comete fallos controlados según la dificultad.
+- ⚡ **Duelo contra la Mascota IA:** Compite contra Moli determinando si una fórmula es Verdadera o Falsa bajo asignaciones atómicas dadas. La IA evalúa la fórmula en tiempo real, simula tiempo de pensamiento y comete fallos controlados según la dificultad.
 - **Reglas Generales:** Sin etiquetas de "Ronda N", botón visible de salida en todo momento ("← Salir al Menú") y pantalla final de resumen con estadísticas detalladas y recomendación pedagógica.
 
-### 6. 🤖 Mascota Inteligente (Boleano) & Motor de Machine Learning (Red Neuronal)
+### 6. 🤖 Mascota Inteligente (Moli) & Motor de Machine Learning (Red Neuronal)
 - **Visor Robótico OLED (100% SVG & CSS):** Mascota flotante tipo pantalla/cápsula con ojos vectoriales animados que reaccionan en tiempo real (reposo con parpadeo espontáneo, felicidad al acertar, mareado/fallo, pensativo/duelo).
 - **Tutor Contextual Permanente:** Al cliquear la mascota en cualquier pestaña (Constructor, Proceso Inverso, Tablas o Prácticas), despliega un globo de diálogo que analiza la pantalla y explica didácticamente qué está ocurriendo.
 - **Red Neuronal Perceptrón Multicapa (MLP) Local:** Implementada en JavaScript sin librerías pesadas ni dependencias de internet. Aprende de los patrones de error del alumno por conectivo ($\neg, \land, \lor, \to, \leftrightarrow$), calibra la velocidad del Duelo y emite recomendaciones dinámicas de estudio.

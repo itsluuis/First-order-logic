@@ -1,5 +1,5 @@
 /**
- * mascotController.js - Coordinador Global de la Mascota Inteligente "Boleano"
+ * mascotController.js - Coordinador Global de la Mascota Inteligente "Moli"
  * Inspecciona el contexto activo de la aplicación para ofrecer explicaciones pedagógicas
  * precisas, reaccionar emocionalmente y emitir diagnósticos basados en la Red Neuronal.
  * Libre de emojis en favor de un diseño técnico profesional.

@@ -887,7 +887,7 @@ function loadChallengeToView(challenge) {
 function startDuelMascotTurn(challenge) {
   isWaitingDuelResponse = true;
   mascotController.react('thinking');
-  practiceView.updateDuelMascotBanner('Boleano está evaluando mentalmente la fórmula...');
+  practiceView.updateDuelMascotBanner('Moli está evaluando mentalmente la fórmula...');
 
   studentModel.simulateMascotDecision(challenge.expectedTruthValue, practiceEngine.activeDifficulty)
     .then(mascotResult => {
@@ -896,18 +896,18 @@ function startDuelMascotTurn(challenge) {
         const answerText = mascotResult.answer ? 'VERDADERO' : 'FALSO';
 
         if (mascotResult.isCorrect) {
-          practiceView.updateDuelMascotBanner(`Boleano respondió ${answerText} y ¡ha acertado!`, true);
+          practiceView.updateDuelMascotBanner(`Moli respondió ${answerText} y ¡ha acertado!`, true);
           practiceEngine.recordMascotDuelPoint();
-          showToast(`Boleano acertó (${answerText})`, 'info');
+          showToast(`Moli acertó (${answerText})`, 'info');
           setTimeout(() => {
             if (practiceEngine.isPlaying) {
               loadChallengeToView(practiceEngine.nextChallenge());
             }
           }, 1200);
         } else {
-          practiceView.updateDuelMascotBanner(`Boleano respondió ${answerText} y ¡ha fallado! Tu turno...`, true);
+          practiceView.updateDuelMascotBanner(`Moli respondió ${answerText} y ¡ha fallado! Tu turno...`, true);
           mascotController.react('dizzy');
-          showToast(`¡Boleano se equivocó! Tienes la oportunidad de responder`, 'info');
+          showToast(`¡Moli se equivocó! Tienes la oportunidad de responder`, 'info');
           isWaitingDuelResponse = true; // El jugador todavía puede responder
         }
       }
@@ -1060,8 +1060,13 @@ function initPracticeAndMascot() {
   };
 
   practiceView.renderLobby(studentModel.getRecommendation());
-  const initialSlot = document.getElementById('mascot-dock-slot');
-  if (initialSlot) mascotController.dockTo(initialSlot);
+  if (AppState.activeTab === 'tab-practice') {
+    const initialSlot = document.getElementById('mascot-dock-slot');
+    if (initialSlot) mascotController.dockTo(initialSlot);
+  }
+
+  // Exponer controlador para interactividad y pruebas
+  window.mascotController = mascotController;
 }
 
 // =============================================================================

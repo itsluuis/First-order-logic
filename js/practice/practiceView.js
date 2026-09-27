@@ -115,7 +115,7 @@ export class PracticeView {
           <div class="minigame-card duel-card" data-game-id="duel">
             <div class="minigame-icon-svg">${ICONS.bolt}</div>
             <h3 class="minigame-title">Duelo contra la Mascota IA</h3>
-            <p class="minigame-desc">Compite en tiempo real contra Boleano evaluando si una fórmula es Verdadera o Falsa. La IA evalúa la fórmula y comete fallos controlados.</p>
+            <p class="minigame-desc">Compite en tiempo real contra Moli evaluando si una fórmula es Verdadera o Falsa. La IA evalúa la fórmula y comete fallos controlados.</p>
             <div class="minigame-footer">
               <label class="diff-label">Dificultad:</label>
               <select class="diff-select" id="diff-duel">
@@ -158,7 +158,7 @@ export class PracticeView {
     this.isLocked = false;
 
     const scoreBadge = isDuel 
-      ? `<span class="score-pill">Jugador: <strong id="arena-player-score">0</strong></span> <span class="score-pill bot">Boleano: <strong id="arena-bot-score">0</strong></span>`
+      ? `<span class="score-pill">Jugador: <strong id="arena-player-score">0</strong></span> <span class="score-pill bot">Moli: <strong id="arena-bot-score">0</strong></span>`
       : `<span class="score-pill">Aciertos: <strong id="arena-player-score">0</strong></span>`;
 
     this.container.innerHTML = `
@@ -497,7 +497,7 @@ export class PracticeView {
         </div>
 
         <div id="duel-mascot-status" class="duel-mascot-status">
-          Boleano está evaluando mentalmente la fórmula...
+          Moli está evaluando mentalmente la fórmula...
         </div>
 
         <div class="duel-action-row">
@@ -544,7 +544,7 @@ export class PracticeView {
 
     const rec = summary.recommendation || { message: 'Sigue practicando para elevar tu nivel de agilidad lógica.' };
     const duelComparison = summary.gameId === 'duel'
-      ? `<div class="duel-result-score">Jugador: <strong>${summary.score}</strong> vs Boleano: <strong>${summary.botScore}</strong></div>`
+      ? `<div class="duel-result-score">Jugador: <strong>${summary.score}</strong> vs Moli: <strong>${summary.botScore}</strong></div>`
       : '';
 
     this.container.innerHTML = `
