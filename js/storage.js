@@ -16,7 +16,7 @@ export const PROFILES = {
     role: 'admin',
     requiresPassword: true,
     password: '1234',
-    icon: '🛡️',
+    icon: 'shield',
     description: 'Acceso total y configuración de parámetros del sistema.'
   },
   PROFESOR: {
@@ -24,7 +24,7 @@ export const PROFILES = {
     name: 'Profesor',
     role: 'profesor',
     requiresPassword: false,
-    icon: '👨‍🏫',
+    icon: 'teacher',
     description: 'Uso de herramientas lógicas, constructor visual y tablas de verdad.'
   },
   ESTUDIANTE: {
@@ -32,7 +32,7 @@ export const PROFILES = {
     name: 'Estudiante',
     role: 'estudiante',
     requiresPassword: false,
-    icon: '🎓',
+    icon: 'student',
     description: 'Práctica con proposiciones moleculares, FBF y análisis sintáctico.'
   }
 };

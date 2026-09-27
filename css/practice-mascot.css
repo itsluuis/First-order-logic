@@ -1,10 +1,10 @@
 /* ==========================================================================
    practice-mascot.css - Estilos del Centro de Prácticas y Mascota Robótica OLED
-   Glassmorphism, animaciones fluidas, efectos neón y diseño responsivo
+   Glassmorphism, animaciones fluidas, efectos neón, docking y diseño responsivo
    ========================================================================== */
 
 /* ==========================================================================
-   1. WIDGET GLOBAL DE LA MASCOTA ROBÓTICA OLED
+   1. WIDGET GLOBAL DE LA MASCOTA ROBÓTICA OLED (+50% de escala)
    ========================================================================== */
 .mascot-widget {
   position: fixed;
@@ -18,15 +18,15 @@
   pointer-events: none;
 }
 
-/* Visor estilo píldora/cápsula OLED */
+/* Visor estilo píldora/cápsula OLED (174px x 90px -> +50% tamaño) */
 .mascot-visor {
   pointer-events: auto;
-  width: 116px;
-  height: 60px;
+  width: 174px;
+  height: 90px;
   background: #060911;
-  border: 2px solid rgba(56, 189, 248, 0.4);
+  border: 3px solid rgba(56, 189, 248, 0.45);
   border-radius: 9999px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), 0 0 20px rgba(56, 189, 248, 0.25);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75), 0 0 24px rgba(56, 189, 248, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -40,13 +40,29 @@
 }
 
 .mascot-visor:hover {
-  transform: translateY(-5px) scale(1.08);
+  transform: translateY(-5px) scale(1.06);
   border-color: #38bdf8;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.75), 0 0 30px rgba(56, 189, 248, 0.55);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.85), 0 0 35px rgba(56, 189, 248, 0.6);
 }
 
 .mascot-visor:active {
   transform: scale(0.96);
+}
+
+/* Estilo de la Mascota cuando está Acoplada (Docked) en el Lobby o Resumen */
+.mascot-visor.docked {
+  position: relative;
+  margin: 0 auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), 0 0 20px rgba(56, 189, 248, 0.35);
+}
+
+.mascot-dock-slot {
+  width: 190px;
+  height: 104px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 /* Brillo del cristal del visor */
@@ -58,45 +74,45 @@
   border-radius: inherit;
 }
 
-/* Ojos SVG vectoriales */
+/* Ojos SVG vectoriales (+50% tamaño) */
 .mascot-eyes-svg {
-  width: 92px;
-  height: 48px;
+  width: 138px;
+  height: 72px;
   color: #38bdf8;
-  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.85));
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.9));
   transition: color 0.3s ease, filter 0.3s ease;
 }
 
 /* Expresiones dinámicas */
 .mascot-visor.expr-happy .mascot-eyes-svg {
   color: #34d399;
-  filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.95));
+  filter: drop-shadow(0 0 10px rgba(52, 211, 153, 0.95));
 }
 .mascot-visor.expr-happy {
-  border-color: rgba(52, 211, 153, 0.6);
+  border-color: rgba(52, 211, 153, 0.65);
   animation: mascotHappyHop 0.5s ease;
 }
 
 .mascot-visor.expr-dizzy .mascot-eyes-svg {
   color: #f43f5e;
-  filter: drop-shadow(0 0 8px rgba(244, 63, 94, 0.95));
+  filter: drop-shadow(0 0 10px rgba(244, 63, 94, 0.95));
 }
 .mascot-visor.expr-dizzy {
-  border-color: rgba(244, 63, 94, 0.6);
+  border-color: rgba(244, 63, 94, 0.65);
   animation: mascotShake 0.4s ease;
 }
 
 .mascot-visor.expr-thinking .mascot-eyes-svg {
   color: #fbbf24;
-  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.95));
+  filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.95));
 }
 
 .mascot-visor.expr-battle .mascot-eyes-svg {
   color: #c084fc;
-  filter: drop-shadow(0 0 9px rgba(192, 132, 252, 0.95));
+  filter: drop-shadow(0 0 12px rgba(192, 132, 252, 0.95));
 }
 .mascot-visor.expr-battle {
-  border-color: rgba(192, 132, 252, 0.6);
+  border-color: rgba(192, 132, 252, 0.65);
 }
 
 /* Animación de parpadeo */
@@ -112,7 +128,7 @@
 
 @keyframes mascotHappyHop {
   0%, 100% { transform: translateY(0) scale(1); }
-  40% { transform: translateY(-10px) scale(1.06); }
+  40% { transform: translateY(-10px) scale(1.05); }
   70% { transform: translateY(2px) scale(0.98); }
 }
 
@@ -125,12 +141,12 @@
 /* Globo de diálogo flotante */
 .mascot-speech-bubble {
   pointer-events: auto;
-  width: 320px;
+  width: 330px;
   max-width: calc(100vw - 48px);
-  background: rgba(15, 23, 42, 0.94);
+  background: rgba(15, 23, 42, 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  border: 1px solid rgba(56, 189, 248, 0.35);
   border-radius: 16px;
   padding: 16px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(56, 189, 248, 0.15);
@@ -149,8 +165,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
-  padding-bottom: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
   border-bottom: 1px solid rgba(148, 163, 184, 0.15);
 }
 
@@ -183,22 +199,6 @@
   border-radius: 4px;
   font-weight: 600;
   text-transform: uppercase;
-}
-
-.mascot-bubble-close {
-  background: transparent;
-  border: none;
-  color: #94a3b8;
-  font-size: 1rem;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-}
-
-.mascot-bubble-close:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.1);
 }
 
 .mascot-bubble-content {
@@ -246,31 +246,19 @@
 .practice-rec-card {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(56, 189, 248, 0.08) 100%);
   border: 1px solid rgba(56, 189, 248, 0.35);
   border-radius: var(--radius-md);
-  padding: 16px 20px;
+  padding: 20px 24px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
-.practice-rec-avatar {
-  font-size: 2.2rem;
-  background: rgba(56, 189, 248, 0.15);
-  width: 54px;
-  height: 54px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  border: 1px solid rgba(56, 189, 248, 0.3);
-}
-
 .practice-rec-content p {
-  margin: 4px 0 0 0;
-  font-size: 0.9rem;
+  margin: 6px 0 0 0;
+  font-size: 0.92rem;
   color: #e2e8f0;
+  line-height: 1.45;
 }
 
 .practice-rec-badge {
@@ -317,9 +305,17 @@
   box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6), 0 0 28px rgba(192, 132, 252, 0.35);
 }
 
-.minigame-icon {
-  font-size: 2.6rem;
+.minigame-icon-svg {
+  width: 44px;
+  height: 44px;
+  color: var(--accent-cyan);
   margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.minigame-card.duel-card .minigame-icon-svg {
+  color: var(--accent-purple);
 }
 
 .minigame-title {
@@ -344,6 +340,13 @@
   margin-top: auto;
   padding-top: 14px;
   border-top: 1px solid var(--border-color);
+}
+
+.btn-icon-slot {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 6px;
+  vertical-align: middle;
 }
 
 .diff-label {
@@ -428,8 +431,14 @@
   color: #38bdf8;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   transition: all 0.3s ease;
+}
+
+.timer-icon {
+  display: inline-flex;
+  align-items: center;
+  color: #38bdf8;
 }
 
 .arena-timer-pill.timer-warning {
@@ -437,6 +446,10 @@
   color: #f43f5e;
   box-shadow: 0 0 15px rgba(244, 63, 94, 0.5);
   animation: timerPulse 1s infinite alternate;
+}
+
+.arena-timer-pill.timer-warning .timer-icon {
+  color: #f43f5e;
 }
 
 @keyframes timerPulse {
@@ -461,17 +474,22 @@
   color: var(--text-primary);
 }
 
-/* Árbol en Juego 1 */
+/* ÁRBOL SINTÁCTICO JERÁRQUICO EN JUEGO 1 (Solución a Fotos 1 y 2 vs Foto 3) */
 .tree-display-container {
   background: var(--bg-sunken);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: 20px;
-  min-height: 220px;
+  padding: 28px 20px;
+  min-height: 240px;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow-x: auto;
+}
+
+.tree-display-container .tree {
+  display: inline-block;
+  margin: 0 auto;
 }
 
 .options-grid-4 {
@@ -505,6 +523,14 @@
   background: rgba(100, 116, 139, 0.2);
   border-color: rgba(100, 116, 139, 0.3);
   text-decoration: line-through;
+}
+
+.btn-option.option-correct {
+  background: rgba(52, 211, 153, 0.25) !important;
+  border-color: #34d399 !important;
+  color: #34d399 !important;
+  box-shadow: 0 0 20px rgba(52, 211, 153, 0.45) !important;
+  transform: translateY(-2px);
 }
 
 /* Juego 2: Moleculares */
@@ -651,7 +677,7 @@
   background: rgba(244, 63, 94, 0.15);
   border: 1px solid rgba(244, 63, 94, 0.3);
   color: #f43f5e;
-  padding: 8px 12px;
+  padding: 8px 14px;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 700;
@@ -819,7 +845,7 @@
   align-items: center;
   text-align: center;
   gap: 24px;
-  max-width: 640px;
+  max-width: 680px;
   margin: 0 auto;
   box-shadow: var(--shadow-lg);
   animation: bubblePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -884,18 +910,14 @@
 
 .summary-mascot-box {
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
+  align-items: center;
+  gap: 20px;
   background: linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0%, rgba(192, 132, 252, 0.08) 100%);
   border: 1px solid rgba(56, 189, 248, 0.35);
   border-radius: var(--radius-md);
-  padding: 18px;
+  padding: 20px 24px;
   text-align: left;
   width: 100%;
-}
-
-.summary-mascot-avatar {
-  font-size: 2.2rem;
 }
 
 .summary-mascot-message h4 {
@@ -927,12 +949,21 @@
     right: 16px;
   }
   .mascot-visor {
-    width: 96px;
-    height: 50px;
+    width: 130px;
+    height: 68px;
   }
   .mascot-eyes-svg {
-    width: 76px;
-    height: 40px;
+    width: 104px;
+    height: 54px;
+  }
+  .mascot-dock-slot {
+    width: 140px;
+    height: 74px;
+  }
+  .practice-rec-card,
+  .summary-mascot-box {
+    flex-direction: column;
+    text-align: center;
   }
   .options-grid-4,
   .verdict-buttons-row,

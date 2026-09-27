@@ -34,19 +34,21 @@
             <option value="standard">Estándar (¬, ∧, ∨, →, ↔)</option>
             <option value="alternative">Alternativa (~, &, ∨, ⊃, ≡)</option>
           </select>
-          <span id="notation-locked-badge" class="badge badge-admin hidden" style="font-size: 0.65rem;" title="Bloqueado por el Administrador">🔒 Fijo</span>
+          <span id="notation-locked-badge" class="badge badge-admin hidden" style="font-size: 0.65rem;" title="Bloqueado por el Administrador">Fijo</span>
         </div>
 
         <!-- Indicador de Perfil y Sesión -->
         <div class="user-profile-pill" id="user-session-info">
-          <span id="current-user-avatar">👤</span>
+          <span id="current-user-avatar" class="avatar-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          </span>
           <span id="current-username" style="font-weight: 600;">Invitado</span>
           <span id="current-user-role" class="badge badge-user">Estudiante</span>
         </div>
 
         <!-- Botón de Tema (Dark / Light) -->
         <button id="btn-toggle-theme" class="btn btn-icon" title="Cambiar Tema Claro / Oscuro">
-          🌓
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line></svg>
         </button>
 
         <!-- Botón de Cerrar Sesión -->
@@ -59,19 +61,19 @@
     <!-- Navegación por Pestañas del Sistema -->
     <nav class="nav-tabs" id="main-nav-tabs">
       <button class="nav-tab active" data-tab="tab-builder">
-        <span>🧩</span> Constructor Visual
+        <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span> Constructor Visual
       </button>
       <button class="nav-tab" data-tab="tab-inverse">
-        <span>🔄</span> Proceso Inverso
+        <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path><path d="M3 21v-5h5"></path></svg></span> Proceso Inverso
       </button>
       <button class="nav-tab" data-tab="tab-truthtable">
-        <span>📊</span> Tabla de Verdad & Árbol
+        <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="12" y1="3" x2="12" y2="21"></line></svg></span> Tabla de Verdad & Árbol
       </button>
       <button class="nav-tab" data-tab="tab-practice">
-        <span>🎯</span> Centro de Prácticas
+        <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg></span> Centro de Prácticas
       </button>
       <button class="nav-tab hidden" id="tab-nav-admin" data-tab="tab-admin">
-        <span>⚙️</span> Parámetros
+        <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></span> Parámetros
       </button>
     </nav>
 
@@ -89,7 +91,7 @@
             </div>
             <div class="flex gap-1">
               <button id="btn-randomize-atomics-builder" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;" title="Generar enunciados aleatorios para todas las variables activas">
-                🎲 Atómicas Aleatorias
+                Atómicas Aleatorias
               </button>
               <button id="btn-add-atomic" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">
                 + Variable
@@ -111,7 +113,7 @@
             </div>
             <div class="flex gap-1" style="flex-wrap: wrap;">
               <button id="btn-random-molecular-builder" class="btn btn-primary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;" title="Generar proposición molecular aleatoria con conectivos y paréntesis">
-                🎲 Molecular Aleatoria
+                Molecular Aleatoria
               </button>
               <button id="btn-undo-token" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.65rem;" title="Deshacer último símbolo">
                 ↶ Deshacer
@@ -125,7 +127,7 @@
           <!-- Lienzo visual de tokens construidos -->
           <div id="builder-canvas" class="builder-canvas">
             <span id="canvas-placeholder" class="text-muted" style="font-size: 0.9rem;">
-              Haz clic en los botones inferiores o en "🎲 Molecular Aleatoria" para ensamblar la proposición molecular...
+              Haz clic en los botones inferiores o en "Molecular Aleatoria" para ensamblar la proposición molecular...
             </span>
           </div>
 
@@ -185,7 +187,7 @@
 
           <div class="flex gap-1 mt-2">
             <button id="btn-send-to-truth" class="btn btn-primary">
-              📊 Enviar a Tabla de Verdad
+              Enviar a Tabla de Verdad
             </button>
           </div>
         </div>
@@ -199,13 +201,13 @@
       <div class="card">
         <div class="card-header">
           <div>
-            <h2 class="card-title">🔄 Proceso Inverso: De FBF a Proposición Molecular</h2>
+            <h2 class="card-title">Proceso Inverso: De FBF a Proposición Molecular</h2>
             <p class="card-subtitle">
               Ingresa una FBF o genérala aleatoriamente. El sistema identificará las variables para que asignes (o generes) enunciados en español.
             </p>
           </div>
           <button id="btn-random-inverse-fbf" class="btn btn-secondary" style="font-size: 0.85rem;" title="Generar una FBF aleatoria con paréntesis balanceados">
-            🎲 Generar FBF Aleatoria
+            Generar FBF Aleatoria
           </button>
         </div>
 
@@ -215,7 +217,7 @@
             <input type="text" id="inverse-fbf-input" class="form-input formula-input" placeholder="Ejemplo: (p ∧ q) → ¬r o p ∨ (q → r)">
             <button id="btn-clear-inverse-input" class="btn-clear-inline" title="Limpiar campo FBF">✕</button>
             <button id="btn-parse-inverse" class="btn btn-primary">
-              🔍 Analizar FBF
+              Analizar FBF
             </button>
           </div>
         </div>
@@ -241,14 +243,14 @@
           <div class="card-header" style="margin-bottom: 0.75rem; padding-bottom: 0.5rem;">
             <div>
               <h3 class="card-title" style="font-size: 1.05rem;">
-                📝 Asignación de Enunciados para las Variables Detectadas
+                Asignación de Enunciados para las Variables Detectadas
               </h3>
               <p class="card-subtitle">
                 Puedes escribir los enunciados manualmente o usar el botón para autocompletarlos de forma aleatoria.
               </p>
             </div>
             <button id="btn-randomize-inverse-vars" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">
-              🎲 Generar Atómicas Aleatorias
+              Generar Atómicas Aleatorias
             </button>
           </div>
 
@@ -257,7 +259,7 @@
           </div>
 
           <button id="btn-generate-inverse-sentence" class="btn btn-primary mt-2">
-            ✨ Reconstruir Proposición Molecular en Español
+            Reconstruir Proposición Molecular en Español
           </button>
         </div>
 
@@ -272,7 +274,7 @@
           <p id="inverse-result-sentence" class="sentence-display-text" style="font-size: 1.2rem;">--</p>
           <div class="flex gap-1 mt-2">
             <button id="btn-send-inverse-to-truth" class="btn btn-secondary">
-              📊 Ver Tabla de Verdad de esta FBF
+              Ver Tabla de Verdad de esta FBF
             </button>
           </div>
         </div>
@@ -286,7 +288,7 @@
       <div class="card">
         <div class="card-header">
           <div>
-            <h2 class="card-title">📊 Análisis Lógico: Tabla de Verdad y Árbol Sintáctico</h2>
+            <h2 class="card-title">Análisis Lógico: Tabla de Verdad y Árbol Sintáctico</h2>
             <p class="card-subtitle">
               Calcula todas las 2<sup>n</sup> combinaciones posibles, evalúa columnas intermedias y diagnostica Tautología, Contradicción o Contingencia.
             </p>
@@ -299,7 +301,7 @@
             <input type="text" id="truth-fbf-input" class="form-input formula-input" placeholder="Ejemplo: (p ∧ q) → (¬r ∨ p)">
             <button id="btn-clear-truth-input" class="btn-clear-inline" title="Limpiar fórmula">✕</button>
             <button id="btn-generate-truth-table" class="btn btn-primary">
-              ⚡ Generar Análisis Completo
+              Generar Análisis Completo
             </button>
           </div>
         </div>
@@ -316,7 +318,7 @@
 
           <!-- Mensaje de límite cuando se opera con más de 6 proposiciones -->
           <div id="truth-table-limit-message" class="truth-table-limit-card hidden">
-            <span>⚠️</span>
+            <span style="display: inline-flex; align-items: center; color: var(--accent-amber);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></span>
             <span id="truth-table-limit-text">La tabla solo puede aparecer cuando se estan operando 6 o menos preposiciones.</span>
           </div>
 
@@ -330,7 +332,7 @@
           <!-- Árbol Sintáctico Visual -->
           <div style="margin-top: 2rem;">
             <h3 class="card-title" style="font-size: 1.1rem; margin-bottom: 0.5rem;">
-              🌳 Desglose Jerárquico (Árbol Sintáctico de la FBF)
+              Desglose Jerárquico (Árbol Sintáctico de la FBF)
             </h3>
             <p class="card-subtitle" style="margin-bottom: 1rem;">
               Muestra la estructura gramatical formal, identificando el conectivo principal y las subfórmulas dependientes.
@@ -350,7 +352,7 @@
       <div class="card">
         <div class="card-header">
           <div>
-            <h2 class="card-title">⚙️ Parámetros del Sistema (Configuración de Administrador)</h2>
+            <h2 class="card-title">Parámetros del Sistema (Configuración de Administrador)</h2>
             <p class="card-subtitle">
               Configura las políticas globales de la aplicación accesibles exclusivamente por el perfil Administrador.
             </p>
@@ -361,7 +363,7 @@
         <div style="max-width: 650px;">
           <!-- Bloque de Notación Forzada -->
           <div class="card card-subtle">
-            <h3 class="card-title" style="font-size: 1.05rem;">🔒 Política de Notación de Conectivos</h3>
+            <h3 class="card-title" style="font-size: 1.05rem;">Política de Notación de Conectivos</h3>
             <p class="card-subtitle" style="margin-bottom: 1.25rem;">
               Puedes permitir que los usuarios elijan la notación libremente o bloquear la simbología para forzar una única notación en toda la plataforma.
             </p>
@@ -376,7 +378,7 @@
             </div>
 
             <button id="btn-admin-save-notation" class="btn btn-primary">
-              💾 Guardar Política de Notación
+              Guardar Política de Notación
             </button>
           </div>
         </div>
@@ -405,17 +407,17 @@
       <!-- Selector visual de 3 perfiles -->
       <div class="profile-cards-grid">
         <div class="profile-card active" data-profile-id="estudiante">
-          <span class="profile-card-icon">🎓</span>
+          <span class="profile-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg></span>
           <span class="profile-card-title">Estudiante</span>
           <span class="profile-card-desc">Práctica y aprendizaje</span>
         </div>
         <div class="profile-card" data-profile-id="profesor">
-          <span class="profile-card-icon">👨‍🏫</span>
+          <span class="profile-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg></span>
           <span class="profile-card-title">Profesor</span>
           <span class="profile-card-desc">Herramientas pedagógicas</span>
         </div>
         <div class="profile-card" data-profile-id="admin">
-          <span class="profile-card-icon">🛡️</span>
+          <span class="profile-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span>
           <span class="profile-card-title">Administrador</span>
           <span class="profile-card-desc">Parámetros globales</span>
         </div>
@@ -427,7 +429,7 @@
           <label class="form-label">Contraseña de Administrador:</label>
           <input type="password" id="login-password" class="form-input" autocomplete="current-password" placeholder="Introduce la contraseña (1234)">
           <span class="text-muted" style="font-size: 0.75rem; display: block; margin-top: 0.3rem;">
-            🔒 La contraseña inicial es <strong>1234</strong>.
+            La contraseña inicial es <strong>1234</strong>.
           </span>
         </div>
 

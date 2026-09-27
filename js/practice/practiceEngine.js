@@ -1,7 +1,7 @@
 /**
  * practiceEngine.js - Motor Lógico y Generador de Desafíos del Centro de Prácticas
  * Controla el ciclo de vida de los 4 minijuegos, temporizadores precisos por dificultad,
- * puntuaciones y generación determinista de ejercicios.
+ * puntuaciones, prevención de repeticiones (últimas 2 FBFs) y cambio forzado de posición de respuesta.
  */
 
 import { FBFParser, OPERATORS, NOTATION_MODES, NOTATION_SYMBOLS } from '../logic/ast.js';
@@ -53,6 +53,20 @@ export class PracticeEngine {
     this.correctAnswers = 0;
     this.currentChallenge = null;
     this.challengeStartTime = 0;
+
+    // Control de variabilidad: buffer de últimas 2 FBFs y posición previa
+    this.lastFBFs = [];
+    this.lastCorrectOptionIndex = -1;
+  }
+
+  /**
+   * Registra una FBF en el buffer de las últimas 2 para evitar repeticiones
+   */
+  _recordFBF(fbf) {
+    this.lastFBFs.push(fbf);
+    if (this.lastFBFs.length > 2) {
+      this.lastFBFs.shift();
+    }
   }
 
   /**
@@ -68,6 +82,8 @@ export class PracticeEngine {
     this.botScore = 0;
     this.totalAttempts = 0;
     this.correctAnswers = 0;
+    this.lastFBFs = [];
+    this.lastCorrectOptionIndex = -1;
 
     const config = GAME_DIFFICULTIES[gameId]?.[difficulty] || { timeSec: 90 };
     this.timeRemaining = config.timeSec;
@@ -183,44 +199,61 @@ export class PracticeEngine {
     const vars = this.activeDifficulty === 'facil' ? ['p', 'q'] : ['p', 'q', 'r'];
     const maxDepth = config.maxDepth;
 
-    // Generar AST objetivo
-    const targetAST = RandomGenerators.generateRandomAST(0, maxDepth, vars);
-    const correctFBF = FBFParser.toString(targetAST, NOTATION_MODES.STANDARD, false);
+    // Generar AST objetivo garantizando que no se repita con las últimas 2 rondas
+    let targetAST, correctFBF;
+    let attempts = 0;
+    do {
+      targetAST = RandomGenerators.generateRandomAST(0, maxDepth, vars);
+      correctFBF = FBFParser.toString(targetAST, NOTATION_MODES.STANDARD, false);
+      attempts++;
+    } while (this.lastFBFs.includes(correctFBF) && attempts < 25);
+
+    this._recordFBF(correctFBF);
 
     // Extraer conectivos para ML
     const connectivesPresent = this._extractConnectivesFromAST(targetAST);
 
     // Generar 3 distractores bien formados pero distintos
-    const options = [{ fbf: correctFBF, isCorrect: true }];
+    const distractors = [];
     const seen = new Set([correctFBF]);
 
     let safety = 0;
-    while (options.length < 4 && safety < 30) {
+    while (distractors.length < 3 && safety < 35) {
       safety++;
       const distractorAST = RandomGenerators.generateRandomAST(0, maxDepth, vars);
       const distractorFBF = FBFParser.toString(distractorAST, NOTATION_MODES.STANDARD, false);
 
       if (!seen.has(distractorFBF)) {
         seen.add(distractorFBF);
-        options.push({ fbf: distractorFBF, isCorrect: false });
+        distractors.push({ fbf: distractorFBF, isCorrect: false });
       }
     }
 
-    // Si faltan distractores por combinatoria, mutar conectivos
     const allSymbols = ['∧', '∨', '→', '↔'];
-    while (options.length < 4) {
-      const sym = allSymbols[options.length % allSymbols.length];
+    while (distractors.length < 3) {
+      const sym = allSymbols[distractors.length % allSymbols.length];
       const fallbackFBF = `(${vars[0]} ${sym} ${vars[1]})`;
       if (!seen.has(fallbackFBF)) {
         seen.add(fallbackFBF);
-        options.push({ fbf: fallbackFBF, isCorrect: false });
+        distractors.push({ fbf: fallbackFBF, isCorrect: false });
       } else {
-        options.push({ fbf: `(¬${vars[0]} ${sym} ${vars[1]})`, isCorrect: false });
+        distractors.push({ fbf: `(¬${vars[0]} ${sym} ${vars[1]})`, isCorrect: false });
       }
     }
 
-    // Barajar opciones
-    options.sort(() => 0.5 - Math.random());
+    // Variabilidad obligatoria: la opción correcta NO puede estar en la misma posición de la ronda anterior
+    const candidatePositions = [0, 1, 2, 3].filter(idx => idx !== this.lastCorrectOptionIndex);
+    const correctSlot = candidatePositions[Math.floor(Math.random() * candidatePositions.length)];
+    this.lastCorrectOptionIndex = correctSlot;
+
+    const options = new Array(4);
+    options[correctSlot] = { fbf: correctFBF, isCorrect: true };
+    let distractorIdx = 0;
+    for (let i = 0; i < 4; i++) {
+      if (i !== correctSlot) {
+        options[i] = distractors[distractorIdx++];
+      }
+    }
 
     return {
       type: 'tree',
@@ -228,6 +261,7 @@ export class PracticeEngine {
       treeData: FBFParser.toTreeData(targetAST, NOTATION_MODES.STANDARD),
       options,
       correctFBF,
+      correctSlot,
       connectivesPresent
     };
   }
@@ -239,7 +273,16 @@ export class PracticeEngine {
     const vars = this.activeDifficulty === 'facil' ? ['p', 'q'] : ['p', 'q', 'r'];
     const maxDepth = this.activeDifficulty === 'facil' ? 1 : (this.activeDifficulty === 'normal' ? 2 : 3);
 
-    const ast = RandomGenerators.generateRandomAST(0, maxDepth, vars);
+    let ast, expectedFBF;
+    let attempts = 0;
+    do {
+      ast = RandomGenerators.generateRandomAST(0, maxDepth, vars);
+      expectedFBF = FBFParser.toString(ast, NOTATION_MODES.STANDARD, false);
+      attempts++;
+    } while (this.lastFBFs.includes(expectedFBF) && attempts < 25);
+
+    this._recordFBF(expectedFBF);
+
     const variableNames = FBFParser.getVariables(ast);
 
     // Asignar enunciados en español deterministas
@@ -250,7 +293,6 @@ export class PracticeEngine {
     });
 
     const naturalText = NaturalLanguageTranslator.toSpanish(ast, varMap, true);
-    const expectedFBF = FBFParser.toString(ast, NOTATION_MODES.STANDARD, false);
     const connectivesPresent = this._extractConnectivesFromAST(ast);
 
     return {
@@ -271,37 +313,39 @@ export class PracticeEngine {
     const vars = this.activeDifficulty === 'facil' ? ['p'] : (this.activeDifficulty === 'normal' ? ['p', 'q'] : ['p', 'q', 'r']);
     const maxDepth = this.activeDifficulty === 'facil' ? 1 : (this.activeDifficulty === 'normal' ? 2 : 3);
 
-    // Crear una fórmula balanceada
-    let ast;
+    let ast, fbfString;
     let verdict = 'CONTINGENCIA';
+    let attempts = 0;
 
-    // Para fácil/normal, a veces inyectar tautologías o contradicciones clásicas
-    const dice = Math.random();
-    if (dice < 0.35 && vars.length >= 1) {
-      // Tautología: (p ∨ ¬p) o (p → p)
-      ast = {
-        type: 'binary',
-        op: OPERATORS.OR,
-        left: { type: 'variable', name: vars[0] },
-        right: { type: 'unary', op: OPERATORS.NOT, operand: { type: 'variable', name: vars[0] } }
-      };
-      verdict = 'TAUTOLOGÍA';
-    } else if (dice < 0.60 && vars.length >= 1) {
-      // Contradicción: (p ∧ ¬p)
-      ast = {
-        type: 'binary',
-        op: OPERATORS.AND,
-        left: { type: 'variable', name: vars[0] },
-        right: { type: 'unary', op: OPERATORS.NOT, operand: { type: 'variable', name: vars[0] } }
-      };
-      verdict = 'CONTRADICCIÓN';
-    } else {
-      ast = RandomGenerators.generateRandomAST(0, maxDepth, vars);
-      const res = TruthTableEngine.generate(ast, NOTATION_MODES.STANDARD);
-      verdict = res.classification;
-    }
+    do {
+      attempts++;
+      const dice = Math.random();
+      if (dice < 0.35 && vars.length >= 1) {
+        ast = {
+          type: 'binary',
+          op: OPERATORS.OR,
+          left: { type: 'variable', name: vars[0] },
+          right: { type: 'unary', op: OPERATORS.NOT, operand: { type: 'variable', name: vars[0] } }
+        };
+        verdict = 'TAUTOLOGÍA';
+      } else if (dice < 0.60 && vars.length >= 1) {
+        ast = {
+          type: 'binary',
+          op: OPERATORS.AND,
+          left: { type: 'variable', name: vars[0] },
+          right: { type: 'unary', op: OPERATORS.NOT, operand: { type: 'variable', name: vars[0] } }
+        };
+        verdict = 'CONTRADICCIÓN';
+      } else {
+        ast = RandomGenerators.generateRandomAST(0, maxDepth, vars);
+        const res = TruthTableEngine.generate(ast, NOTATION_MODES.STANDARD);
+        verdict = res.classification;
+      }
 
-    const fbfString = FBFParser.toString(ast, NOTATION_MODES.STANDARD, false);
+      fbfString = FBFParser.toString(ast, NOTATION_MODES.STANDARD, false);
+    } while (this.lastFBFs.includes(fbfString) && attempts < 25);
+
+    this._recordFBF(fbfString);
     const connectivesPresent = this._extractConnectivesFromAST(ast);
 
     return {
@@ -320,7 +364,17 @@ export class PracticeEngine {
     const vars = ['p', 'q'];
     const maxDepth = this.activeDifficulty === 'dificil' ? 2 : 1;
 
-    const ast = RandomGenerators.generateRandomAST(0, maxDepth, vars);
+    let ast, fbfString;
+    let attempts = 0;
+
+    do {
+      ast = RandomGenerators.generateRandomAST(0, maxDepth, vars);
+      fbfString = FBFParser.toString(ast, NOTATION_MODES.STANDARD, false);
+      attempts++;
+    } while (this.lastFBFs.includes(fbfString) && attempts < 25);
+
+    this._recordFBF(fbfString);
+
     const usedVars = FBFParser.getVariables(ast);
 
     // Asignación de valores de verdad aleatorios
@@ -330,7 +384,6 @@ export class PracticeEngine {
     });
 
     const expectedTruthValue = TruthTableEngine.evaluate(ast, assignments);
-    const fbfString = FBFParser.toString(ast, NOTATION_MODES.STANDARD, false);
     const connectivesPresent = this._extractConnectivesFromAST(ast);
 
     return {
@@ -368,7 +421,7 @@ export class PracticeEngine {
   // =========================================================================
 
   /**
-   * Evalúa la respuesta en Árbol Correcto
+   * Evalúa la respuesta en Árbol Correcto (solo suma 1 punto una vez)
    */
   evaluateTreeAnswer(selectedFBF) {
     if (!this.isPlaying || !this.currentChallenge) return null;
@@ -494,7 +547,6 @@ export class PracticeEngine {
       this.correctAnswers++;
       if (this.mascotController) this.mascotController.react('happy');
     } else {
-      // Restar 1 garantizando que no haya números negativos
       this.score = Math.max(0, this.score - 1);
       if (this.mascotController) this.mascotController.react('dizzy');
     }

@@ -1,10 +1,12 @@
 /**
  * practiceView.js - Renderizado y Coordinación de la Interfaz del Centro de Prácticas
- * Gestiona el menú interactivo con hover/zoom, tableros de minijuegos sin menciones a "Ronda N",
- * temporizador visual, animaciones y pantalla de resumen.
+ * Gestiona el menú interactivo con hover/zoom, renderizado de árbol jerárquico (.tree),
+ * temporizador visual, bloqueo anti-spam con cooldown, y docking de la Mascota OLED.
+ * Libre de emojis en favor de iconos vectoriales SVG.
  */
 
 import { GAME_DIFFICULTIES } from './practiceEngine.js';
+import { ICONS } from '../icons.js';
 
 export class PracticeView {
   constructor(containerId = 'practice-center-container') {
@@ -13,9 +15,14 @@ export class PracticeView {
     this.onExitGame = null;
     this.onAnswer = null;
     this.onPlayAgain = null;
+    this.onLobbyRendered = null;
+    this.onSummaryRendered = null;
+    this.onArenaRendered = null;
 
     // Estado del canvas de tokens para Moleculares
     this.molecularTokens = [];
+    // Bloqueo anti-spam y cooldown entre ejercicios
+    this.isLocked = false;
   }
 
   /**
@@ -23,14 +30,15 @@ export class PracticeView {
    */
   renderLobby(recommendation = null) {
     if (!this.container) return;
+    this.isLocked = false;
 
     let recBannerHtml = '';
     if (recommendation) {
       recBannerHtml = `
         <div class="practice-rec-card">
-          <div class="practice-rec-avatar">🤖</div>
+          <div id="mascot-dock-slot" class="mascot-dock-slot"></div>
           <div class="practice-rec-content">
-            <div class="practice-rec-badge">Recomendación de la Red Neuronal</div>
+            <div class="practice-rec-badge">Diagnóstico de la Red Neuronal</div>
             <p>${recommendation.message}</p>
           </div>
         </div>
@@ -41,7 +49,7 @@ export class PracticeView {
       <div class="practice-lobby">
         <div class="practice-header">
           <div>
-            <h2 class="practice-title">🎯 Centro de Prácticas Global</h2>
+            <h2 class="practice-title">Centro de Prácticas Global</h2>
             <p class="practice-subtitle">Pon a prueba tu agilidad mental y lógica simbólica con 4 minijuegos interactivos.</p>
           </div>
         </div>
@@ -51,7 +59,7 @@ export class PracticeView {
         <div class="minigames-grid">
           <!-- Minijuego 1: Árbol Correcto -->
           <div class="minigame-card" data-game-id="tree">
-            <div class="minigame-icon">🌳</div>
+            <div class="minigame-icon-svg">${ICONS.tree}</div>
             <h3 class="minigame-title">Árbol Correcto</h3>
             <p class="minigame-desc">Analiza el árbol sintáctico generado aleatoriamente y deduce a qué Fórmula Bien Formada corresponde entre 4 opciones.</p>
             <div class="minigame-footer">
@@ -62,14 +70,14 @@ export class PracticeView {
                 <option value="dificil">Difícil (30 seg)</option>
               </select>
               <button class="btn btn-primary btn-play-game" data-game="tree">
-                🎮 Jugar
+                <span class="btn-icon-slot">${ICONS.play}</span> Jugar
               </button>
             </div>
           </div>
 
           <!-- Minijuego 2: Moleculares -->
           <div class="minigame-card" data-game-id="molecular">
-            <div class="minigame-icon">🧩</div>
+            <div class="minigame-icon-svg">${ICONS.puzzle}</div>
             <h3 class="minigame-title">Moleculares</h3>
             <p class="minigame-desc">Lee una proposición molecular en lenguaje cotidiano y construye su fórmula formal exacta usando bloques de tokens interactivos.</p>
             <div class="minigame-footer">
@@ -80,16 +88,16 @@ export class PracticeView {
                 <option value="dificil">Difícil (1:30 min)</option>
               </select>
               <button class="btn btn-primary btn-play-game" data-game="molecular">
-                🎮 Jugar
+                <span class="btn-icon-slot">${ICONS.play}</span> Jugar
               </button>
             </div>
           </div>
 
           <!-- Minijuego 3: Veredicto -->
           <div class="minigame-card" data-game-id="verdict">
-            <div class="minigame-icon">⚖️</div>
+            <div class="minigame-icon-svg">${ICONS.scale}</div>
             <h3 class="minigame-title">Veredicto</h3>
-            <p class="minigame-desc">Observa la fórmula lógica y decide a toda velocidad: ¿es Tautología, Contradicción o Contingencia? ¡Cuidado, los fallos penalizan!</p>
+            <p class="minigame-desc">Observa la fórmula lógica y decide a toda velocidad: ¿es Tautología, Contradicción o Contingencia? Los fallos penalizan.</p>
             <div class="minigame-footer">
               <label class="diff-label">Dificultad:</label>
               <select class="diff-select" id="diff-verdict">
@@ -98,16 +106,16 @@ export class PracticeView {
                 <option value="dificil">Difícil (45 seg)</option>
               </select>
               <button class="btn btn-primary btn-play-game" data-game="verdict">
-                🎮 Jugar
+                <span class="btn-icon-slot">${ICONS.play}</span> Jugar
               </button>
             </div>
           </div>
 
           <!-- Minijuego 4: Duelo contra la Mascota IA -->
           <div class="minigame-card duel-card" data-game-id="duel">
-            <div class="minigame-icon">⚡</div>
+            <div class="minigame-icon-svg">${ICONS.bolt}</div>
             <h3 class="minigame-title">Duelo contra la Mascota IA</h3>
-            <p class="minigame-desc">Compite en tiempo real contra Boleano evaluando si una fórmula es Verdadera o Falsa. ¡La IA también puede fallar y piensa a su ritmo!</p>
+            <p class="minigame-desc">Compite en tiempo real contra Boleano evaluando si una fórmula es Verdadera o Falsa. La IA evalúa la fórmula y comete fallos controlados.</p>
             <div class="minigame-footer">
               <label class="diff-label">Dificultad:</label>
               <select class="diff-select" id="diff-duel">
@@ -116,7 +124,7 @@ export class PracticeView {
                 <option value="dificil">Difícil (1 min)</option>
               </select>
               <button class="btn btn-primary btn-play-game" data-game="duel">
-                ⚔️ Desafiar
+                <span class="btn-icon-slot">${ICONS.swords}</span> Desafiar
               </button>
             </div>
           </div>
@@ -136,6 +144,10 @@ export class PracticeView {
         }
       });
     });
+
+    if (this.onLobbyRendered) {
+      this.onLobbyRendered();
+    }
   }
 
   /**
@@ -143,10 +155,10 @@ export class PracticeView {
    */
   renderGameArena(gameTitle, isDuel = false) {
     if (!this.container) return;
+    this.isLocked = false;
 
-    const scoreTitle = isDuel ? 'Puntuación del Duelo' : 'Respuestas Correctas';
     const scoreBadge = isDuel 
-      ? `<span class="score-pill">👤 Jugador: <strong id="arena-player-score">0</strong></span> <span class="score-pill bot">🤖 Boleano: <strong id="arena-bot-score">0</strong></span>`
+      ? `<span class="score-pill">Jugador: <strong id="arena-player-score">0</strong></span> <span class="score-pill bot">Boleano: <strong id="arena-bot-score">0</strong></span>`
       : `<span class="score-pill">Aciertos: <strong id="arena-player-score">0</strong></span>`;
 
     this.container.innerHTML = `
@@ -163,7 +175,8 @@ export class PracticeView {
           <div class="arena-stats-group">
             ${scoreBadge}
             <div id="arena-timer" class="arena-timer-pill" title="Tiempo restante">
-              ⏱️ <span id="timer-display">00:00</span>
+              <span class="timer-icon">${ICONS.timer}</span>
+              <span id="timer-display">00:00</span>
             </div>
           </div>
         </div>
@@ -176,6 +189,10 @@ export class PracticeView {
     document.getElementById('btn-arena-exit')?.addEventListener('click', () => {
       if (this.onExitGame) this.onExitGame();
     });
+
+    if (this.onArenaRendered) {
+      this.onArenaRendered();
+    }
   }
 
   /**
@@ -212,11 +229,12 @@ export class PracticeView {
   // =========================================================================
 
   /**
-   * Renderiza el tablero de Árbol Correcto
+   * Renderiza el tablero de Árbol Correcto (con clase .tree para dibujar ramas)
    */
   renderTreeChallenge(challenge) {
     const board = document.getElementById('arena-board');
     if (!board) return;
+    this.isLocked = false;
 
     board.innerHTML = `
       <div class="challenge-card">
@@ -225,7 +243,7 @@ export class PracticeView {
         </div>
 
         <div class="tree-display-container">
-          <div class="tree-wrapper">
+          <div class="tree">
             <ul>${this._buildTreeHtml(challenge.treeData)}</ul>
           </div>
         </div>
@@ -242,10 +260,20 @@ export class PracticeView {
 
     board.querySelectorAll('.btn-option').forEach(btn => {
       btn.addEventListener('click', () => {
+        // Bloqueo anti-spam: Si ya se está evaluando la respuesta correcta, ignorar clics adicionales
+        if (this.isLocked) return;
+
         const selectedFBF = btn.getAttribute('data-fbf');
         if (this.onAnswer) {
           const res = this.onAnswer({ type: 'tree', selectedFBF, buttonEl: btn });
-          if (res && !res.isCorrect) {
+          if (res && res.isCorrect) {
+            // Activar bloqueo de cooldown de inmediato
+            this.isLocked = true;
+            btn.classList.add('option-correct');
+            board.querySelectorAll('.btn-option').forEach(b => {
+              b.disabled = true;
+            });
+          } else if (res && !res.isCorrect) {
             btn.disabled = true;
             btn.classList.add('option-disabled');
           }
@@ -260,6 +288,7 @@ export class PracticeView {
   renderMolecularChallenge(challenge) {
     const board = document.getElementById('arena-board');
     if (!board) return;
+    this.isLocked = false;
 
     this.molecularTokens = [];
 
@@ -317,13 +346,13 @@ export class PracticeView {
             <button class="btn btn-token-key paren-key" data-token-type="paren" data-token-val="(">(</button>
             <button class="btn btn-token-key paren-key" data-token-type="paren" data-token-val=")">)</button>
             <button id="btn-token-backspace" class="btn btn-token-action" title="Borrar último">⌫</button>
-            <button id="btn-token-clear" class="btn btn-token-action" title="Vaciar lienzo">✕</button>
+            <button id="btn-token-clear" class="btn btn-token-action" title="Vaciar lienzo">Limpiar</button>
           </div>
 
           <div class="palette-divider"></div>
 
           <button id="btn-verify-molecular" class="btn btn-primary" style="padding: 0.6rem 1.2rem; font-weight: 600;">
-            ✓ Comprobar Fórmula
+            Comprobar Fórmula
           </button>
         </div>
       </div>
@@ -332,6 +361,7 @@ export class PracticeView {
     // Eventos de paleta
     board.querySelectorAll('.btn-token-key').forEach(btn => {
       btn.addEventListener('click', () => {
+        if (this.isLocked) return;
         const type = btn.getAttribute('data-token-type');
         const value = btn.getAttribute('data-token-val');
         this.molecularTokens.push({ type, value });
@@ -340,16 +370,20 @@ export class PracticeView {
     });
 
     document.getElementById('btn-token-backspace')?.addEventListener('click', () => {
+      if (this.isLocked) return;
       this.molecularTokens.pop();
       this._updateMolecularCanvas();
     });
 
     document.getElementById('btn-token-clear')?.addEventListener('click', () => {
+      if (this.isLocked) return;
       this.molecularTokens = [];
       this._updateMolecularCanvas();
     });
 
     document.getElementById('btn-verify-molecular')?.addEventListener('click', () => {
+      if (this.isLocked) return;
+
       if (this.onAnswer) {
         const feedbackEl = document.getElementById('molecular-feedback');
         const res = this.onAnswer({ type: 'molecular', tokens: this.molecularTokens });
@@ -357,6 +391,10 @@ export class PracticeView {
           feedbackEl.textContent = res.feedback;
           feedbackEl.className = `molecular-feedback ${res.isCorrect ? 'correct' : 'incorrect'}`;
           feedbackEl.classList.remove('hidden');
+
+          if (res.isCorrect) {
+            this.isLocked = true;
+          }
         }
       }
     });
@@ -384,11 +422,12 @@ export class PracticeView {
   }
 
   /**
-   * Renderiza el tablero de Veredicto
+   * Renderiza el tablero de Veredicto (sin emojis en los botones)
    */
   renderVerdictChallenge(challenge) {
     const board = document.getElementById('arena-board');
     if (!board) return;
+    this.isLocked = false;
 
     board.innerHTML = `
       <div class="challenge-card">
@@ -402,13 +441,13 @@ export class PracticeView {
 
         <div class="verdict-buttons-row">
           <button class="btn btn-verdict btn-tautology" data-verdict="TAUTOLOGÍA">
-            ✨ TAUTOLOGÍA
+            TAUTOLOGÍA
           </button>
           <button class="btn btn-verdict btn-contingency" data-verdict="CONTINGENCIA">
-            ⚖️ CONTINGENCIA
+            CONTINGENCIA
           </button>
           <button class="btn btn-verdict btn-contradiction" data-verdict="CONTRADICCIÓN">
-            ⚠️ CONTRADICCIÓN
+            CONTRADICCIÓN
           </button>
         </div>
       </div>
@@ -416,9 +455,14 @@ export class PracticeView {
 
     board.querySelectorAll('.btn-verdict').forEach(btn => {
       btn.addEventListener('click', () => {
+        if (this.isLocked) return;
+        this.isLocked = true;
+
         const verdict = btn.getAttribute('data-verdict');
+        board.querySelectorAll('.btn-verdict').forEach(b => b.disabled = true);
+
         if (this.onAnswer) {
-          this.onAnswer({ type: 'verdict', selectedVerdict: verdict });
+          this.onAnswer({ type: 'verdict', selectedVerdict: verdict, buttonEl: btn });
         }
       });
     });
@@ -430,6 +474,7 @@ export class PracticeView {
   renderDuelChallenge(challenge) {
     const board = document.getElementById('arena-board');
     if (!board) return;
+    this.isLocked = false;
 
     const valuesListHtml = Object.entries(challenge.assignments).map(([v, val]) => `
       <span class="value-chip ${val ? 'val-true' : 'val-false'}">
@@ -452,7 +497,7 @@ export class PracticeView {
         </div>
 
         <div id="duel-mascot-status" class="duel-mascot-status">
-          🤖 Boleano está evaluando mentalmente la fórmula...
+          Boleano está evaluando mentalmente la fórmula...
         </div>
 
         <div class="duel-action-row">
@@ -468,7 +513,12 @@ export class PracticeView {
 
     board.querySelectorAll('.btn-truth-val').forEach(btn => {
       btn.addEventListener('click', () => {
+        if (this.isLocked) return;
+        this.isLocked = true;
+
         const val = btn.getAttribute('data-truth') === 'true';
+        board.querySelectorAll('.btn-truth-val').forEach(b => b.disabled = true);
+
         if (this.onAnswer) {
           this.onAnswer({ type: 'duel', playerValue: val });
         }
@@ -486,19 +536,20 @@ export class PracticeView {
   }
 
   /**
-   * Renderiza la Pantalla de Resumen Final
+   * Renderiza la Pantalla de Resumen Final (con espacio dedicado para la mascota)
    */
   renderSummary(summary) {
     if (!this.container) return;
+    this.isLocked = false;
 
-    const rec = summary.recommendation || { message: '¡Sigue practicando para elevar tu nivel!' };
+    const rec = summary.recommendation || { message: 'Sigue practicando para elevar tu nivel de agilidad lógica.' };
     const duelComparison = summary.gameId === 'duel'
       ? `<div class="duel-result-score">Jugador: <strong>${summary.score}</strong> vs Boleano: <strong>${summary.botScore}</strong></div>`
       : '';
 
     this.container.innerHTML = `
       <div class="practice-summary-card">
-        <div class="summary-badge">⏱️ ¡Tiempo Agotado!</div>
+        <div class="summary-badge">Tiempo Agotado</div>
         <h2 class="summary-title">Resumen de tu Desempeño</h2>
         
         <div class="summary-stats-grid">
@@ -518,9 +569,9 @@ export class PracticeView {
 
         ${duelComparison}
 
-        <!-- Caja de Recomendación de la Mascota con Red Neuronal -->
+        <!-- Caja de Recomendación con espacio dedicado para la Mascota OLED -->
         <div class="summary-mascot-box">
-          <div class="summary-mascot-avatar">🤖</div>
+          <div id="mascot-dock-slot" class="mascot-dock-slot"></div>
           <div class="summary-mascot-message">
             <h4>Análisis de la Red Neuronal</h4>
             <p>${rec.message}</p>
@@ -529,10 +580,10 @@ export class PracticeView {
 
         <div class="summary-actions">
           <button id="btn-summary-replay" class="btn btn-primary" style="padding: 0.75rem 1.5rem;">
-            🔁 Jugar de Nuevo
+            <span class="btn-icon-slot">${ICONS.replay}</span> Jugar de Nuevo
           </button>
           <button id="btn-summary-lobby" class="btn btn-secondary" style="padding: 0.75rem 1.5rem;">
-            📋 Volver al Menú
+            <span class="btn-icon-slot">${ICONS.menu}</span> Volver al Menú
           </button>
         </div>
       </div>
@@ -545,9 +596,13 @@ export class PracticeView {
     document.getElementById('btn-summary-lobby')?.addEventListener('click', () => {
       this.renderLobby(summary.recommendation);
     });
+
+    if (this.onSummaryRendered) {
+      this.onSummaryRendered();
+    }
   }
 
-  // Helpers internos
+  // Helper jerárquico para el árbol
   _buildTreeHtml(node) {
     if (!node) return '';
     const isOp = node.type === 'binary' || node.type === 'unary';

@@ -14,6 +14,7 @@ import { MascotController } from './mascot/mascotController.js';
 import { PracticeEngine } from './practice/practiceEngine.js';
 import { PracticeView } from './practice/practiceView.js';
 import { studentModel } from './ml/studentModel.js';
+import { ICONS } from './icons.js';
 
 // Estado global de la aplicación
 const AppState = {
@@ -47,8 +48,8 @@ function showToast(message, type = 'info') {
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
 
-  const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
-  toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+  const iconSvg = type === 'success' ? ICONS.check : type === 'error' ? ICONS.alert : ICONS.info;
+  toast.innerHTML = `<span style="display:inline-flex;align-items:center;">${iconSvg}</span> <span>${message}</span>`;
 
   container.appendChild(toast);
 
@@ -223,7 +224,7 @@ function loginSuccess(session) {
   const roleBadge = document.getElementById('current-user-role');
   const avatar = document.getElementById('current-user-avatar');
 
-  avatar.textContent = session.icon || '👤';
+  avatar.innerHTML = ICONS[session.icon] || ICONS.user;
 
   if (session.role === 'admin') {
     roleBadge.textContent = 'ADMINISTRADOR';
@@ -293,6 +294,10 @@ function switchTab(tabId) {
 
   if (tabId === 'tab-practice' && practiceView && practiceEngine && !practiceEngine.isPlaying) {
     practiceView.renderLobby(studentModel.getRecommendation());
+    const slot = document.getElementById('mascot-dock-slot');
+    if (slot && mascotController) mascotController.dockTo(slot);
+  } else if (tabId !== 'tab-practice' && mascotController) {
+    mascotController.undock();
   }
 
   // Si el globo de la mascota está abierto, refrescar el contexto suavemente
@@ -335,7 +340,7 @@ function renderAtomicDefinitions() {
       <span class="atomic-var-badge">${item.name}</span>
       <input type="text" class="form-input atomic-text-input" id="atomic-input-${item.name}" data-var="${item.name}" value="${item.text}" placeholder="Enunciado de ${item.name}..." style="font-size: 0.9rem; padding: 0.5rem 0.75rem;">
       <button class="btn-clear-inline btn-clear-atomic-field" data-var="${item.name}" title="Limpiar enunciado de ${item.name}">✕</button>
-      ${index > 1 ? `<button class="btn-clear-inline btn-remove-atomic" data-index="${index}" title="Eliminar variable" style="color: var(--accent-rose);">🗑️</button>` : ''}
+      ${index > 1 ? `<button class="btn-clear-inline btn-remove-atomic" data-index="${index}" title="Eliminar variable" style="color: var(--accent-rose); display: inline-flex; align-items: center; justify-content: center;">${ICONS.trash}</button>` : ''}
     `;
     container.appendChild(card);
 
@@ -410,7 +415,7 @@ function updateBuilderDisplay() {
   if (AppState.builderTokens.length === 0) {
     canvas.innerHTML = `
       <span id="canvas-placeholder" class="text-muted" style="font-size: 0.9rem;">
-        Haz clic en los botones inferiores o en "🎲 Molecular Aleatoria" para ensamblar la proposición molecular...
+        Haz clic en los botones inferiores o en "Molecular Aleatoria" para ensamblar la proposición molecular...
       </span>
     `;
     fbfOutput.textContent = '--';
@@ -882,7 +887,7 @@ function loadChallengeToView(challenge) {
 function startDuelMascotTurn(challenge) {
   isWaitingDuelResponse = true;
   mascotController.react('thinking');
-  practiceView.updateDuelMascotBanner('🤖 Boleano está evaluando mentalmente la fórmula...');
+  practiceView.updateDuelMascotBanner('Boleano está evaluando mentalmente la fórmula...');
 
   studentModel.simulateMascotDecision(challenge.expectedTruthValue, practiceEngine.activeDifficulty)
     .then(mascotResult => {
@@ -891,7 +896,7 @@ function startDuelMascotTurn(challenge) {
         const answerText = mascotResult.answer ? 'VERDADERO' : 'FALSO';
 
         if (mascotResult.isCorrect) {
-          practiceView.updateDuelMascotBanner(`🤖 Boleano respondió ${answerText} y ¡ha acertado!`, true);
+          practiceView.updateDuelMascotBanner(`Boleano respondió ${answerText} y ¡ha acertado!`, true);
           practiceEngine.recordMascotDuelPoint();
           showToast(`Boleano acertó (${answerText})`, 'info');
           setTimeout(() => {
@@ -900,7 +905,7 @@ function startDuelMascotTurn(challenge) {
             }
           }, 1200);
         } else {
-          practiceView.updateDuelMascotBanner(`🤖 Boleano respondió ${answerText} y ¡ha fallado! Tu turno...`, true);
+          practiceView.updateDuelMascotBanner(`Boleano respondió ${answerText} y ¡ha fallado! Tu turno...`, true);
           mascotController.react('dizzy');
           showToast(`¡Boleano se equivocó! Tienes la oportunidad de responder`, 'info');
           isWaitingDuelResponse = true; // El jugador todavía puede responder
@@ -967,14 +972,33 @@ function initPracticeAndMascot() {
     }
   });
 
-  practiceView.onSelectGame = (gameId, difficulty) => {
+  practiceView.onLobbyRendered = () => {
+    const slot = document.getElementById('mascot-dock-slot');
+    if (slot) mascotController.dockTo(slot);
+  };
+
+  practiceView.onSummaryRendered = () => {
+    const slot = document.getElementById('mascot-dock-slot');
+    if (slot) mascotController.dockTo(slot);
+  };
+
+  practiceView.onArenaRendered = () => {
+    mascotController.undock();
+  };
+
+  const getGameTitle = (gameId) => {
     const titles = {
-      tree: '🌳 Árbol Correcto',
-      molecular: '🧩 Moleculares',
-      verdict: '⚖️ Veredicto',
-      duel: '⚡ Duelo contra la Mascota IA'
+      tree: 'Árbol Correcto',
+      molecular: 'Moleculares',
+      verdict: 'Veredicto',
+      duel: 'Duelo contra la Mascota IA'
     };
-    practiceView.renderGameArena(titles[gameId] || 'Minijuego', gameId === 'duel');
+    return titles[gameId] || 'Minijuego';
+  };
+
+  practiceView.onSelectGame = (gameId, difficulty) => {
+    mascotController.undock();
+    practiceView.renderGameArena(getGameTitle(gameId), gameId === 'duel');
     const challenge = practiceEngine.startGame(gameId, difficulty);
     loadChallengeToView(challenge);
   };
@@ -983,16 +1007,13 @@ function initPracticeAndMascot() {
     isWaitingDuelResponse = false;
     practiceEngine.stopGame();
     practiceView.renderLobby(studentModel.getRecommendation());
+    const slot = document.getElementById('mascot-dock-slot');
+    if (slot) mascotController.dockTo(slot);
   };
 
   practiceView.onPlayAgain = (gameId, difficulty) => {
-    const titles = {
-      tree: '🌳 Árbol Correcto',
-      molecular: '🧩 Moleculares',
-      verdict: '⚖️ Veredicto',
-      duel: '⚡ Duelo contra la Mascota IA'
-    };
-    practiceView.renderGameArena(titles[gameId] || 'Minijuego', gameId === 'duel');
+    mascotController.undock();
+    practiceView.renderGameArena(getGameTitle(gameId), gameId === 'duel');
     const challenge = practiceEngine.startGame(gameId, difficulty);
     loadChallengeToView(challenge);
   };
@@ -1006,7 +1027,7 @@ function initPracticeAndMascot() {
           if (practiceEngine.isPlaying) {
             loadChallengeToView(practiceEngine.nextChallenge());
           }
-        }, 300);
+        }, 900);
       }
       return res;
     } else if (payload.type === 'molecular') {
@@ -1017,7 +1038,7 @@ function initPracticeAndMascot() {
           if (practiceEngine.isPlaying) {
             loadChallengeToView(practiceEngine.nextChallenge());
           }
-        }, 500);
+        }, 900);
       }
       return res;
     } else if (payload.type === 'verdict') {
@@ -1031,7 +1052,7 @@ function initPracticeAndMascot() {
         if (practiceEngine.isPlaying) {
           loadChallengeToView(practiceEngine.nextChallenge());
         }
-      }, 400);
+      }, 900);
       return res;
     } else if (payload.type === 'duel') {
       handleDuelPlayerAnswer(payload.playerValue);
@@ -1039,6 +1060,8 @@ function initPracticeAndMascot() {
   };
 
   practiceView.renderLobby(studentModel.getRecommendation());
+  const initialSlot = document.getElementById('mascot-dock-slot');
+  if (initialSlot) mascotController.dockTo(initialSlot);
 }
 
 // =============================================================================

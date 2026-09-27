@@ -1,7 +1,7 @@
 /**
  * mascotView.js - Renderizado Visual de la Mascota Robótica OLED (SVG + CSS)
  * Basado fielmente en la referencia visual de pantalla tipo píldora/visor con ojos vectoriales
- * dinámicos y expresivos (^ ^, X X, > <, _ _, etc.) y globo de diálogo contextual.
+ * dinámicos y expresivos (^ ^, X X, > <, _ _, etc.), auto-cierre a 4 segundos y docking dinámico.
  */
 
 export class MascotView {
@@ -10,6 +10,7 @@ export class MascotView {
     this.currentExpression = 'idle';
     this.isBubbleOpen = false;
     this.blinkTimer = null;
+    this.autoCloseTimer = null;
     this.onMascotClick = null;
     this.onBubbleClose = null;
 
@@ -26,7 +27,7 @@ export class MascotView {
     }
 
     this.container.innerHTML = `
-      <!-- Globo de Diálogo Flotante -->
+      <!-- Globo de Diálogo Flotante (Auto-cierre a los 4s, sin botón de cierre) -->
       <div id="mascot-speech-bubble" class="mascot-speech-bubble hidden">
         <div class="mascot-bubble-header">
           <div class="mascot-bubble-title">
@@ -34,10 +35,9 @@ export class MascotView {
             <strong>Boleano</strong>
             <span class="mascot-role-tag">Tutor IA</span>
           </div>
-          <button id="mascot-bubble-close-btn" class="mascot-bubble-close" title="Cerrar">✕</button>
         </div>
         <div id="mascot-bubble-body" class="mascot-bubble-content">
-          ¡Hola! Soy <strong>Boleano</strong>. Haz clic sobre mí en cualquier momento si tienes dudas o necesitas una explicación lógica.
+          Soy <strong>Boleano</strong>. Haz clic sobre mí en cualquier momento si tienes dudas o necesitas una explicación lógica.
         </div>
       </div>
 
@@ -51,22 +51,37 @@ export class MascotView {
       </div>
     `;
 
-    // Eventos
-    const visor = document.getElementById('mascot-visor');
-    visor?.addEventListener('click', (e) => {
+    this.visor = document.getElementById('mascot-visor');
+
+    // Evento de clic en la mascota
+    this.visor?.addEventListener('click', (e) => {
       e.stopPropagation();
       if (this.onMascotClick) this.onMascotClick();
     });
 
-    const closeBtn = document.getElementById('mascot-bubble-close-btn');
-    closeBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.hideSpeechBubble();
-      if (this.onBubbleClose) this.onBubbleClose();
-    });
-
     // Renderizar expresión inicial
     this.setExpression('idle');
+  }
+
+  /**
+   * Acopla la mascota dentro de un contenedor específico (Centro de Prácticas o Resumen)
+   */
+  dockTo(targetElement) {
+    if (!targetElement || !this.visor) return;
+    targetElement.innerHTML = '';
+    targetElement.appendChild(this.visor);
+    this.visor.classList.add('docked');
+  }
+
+  /**
+   * Regresa la mascota a su contenedor flotante en la esquina inferior derecha
+   */
+  undock() {
+    if (!this.container || !this.visor) return;
+    if (this.visor.parentElement !== this.container) {
+      this.container.appendChild(this.visor);
+      this.visor.classList.remove('docked');
+    }
   }
 
   /**
@@ -82,7 +97,8 @@ export class MascotView {
     if (!leftEye || !rightEye || !visor) return;
 
     // Resetear clases de animación
-    visor.className = `mascot-visor expr-${expr}`;
+    const isDocked = visor.classList.contains('docked');
+    visor.className = `mascot-visor expr-${expr}${isDocked ? ' docked' : ''}`;
 
     switch (expr) {
       case 'happy': // Ojos tipo arcos felices: ^ ^
@@ -168,12 +184,17 @@ export class MascotView {
   }
 
   /**
-   * Muestra el globo de diálogo con contenido HTML o texto
+   * Muestra el globo de diálogo con auto-cierre exacto a los 4 segundos
    */
   showSpeechBubble(contentHtml) {
     const bubble = document.getElementById('mascot-speech-bubble');
     const body = document.getElementById('mascot-bubble-body');
     if (!bubble || !body) return;
+
+    if (this.autoCloseTimer) {
+      clearTimeout(this.autoCloseTimer);
+      this.autoCloseTimer = null;
+    }
 
     body.innerHTML = contentHtml;
     bubble.classList.remove('hidden');
@@ -188,12 +209,22 @@ export class MascotView {
         }
       }, 1200);
     }
+
+    // Auto-cierre estricto a los 4 segundos
+    this.autoCloseTimer = setTimeout(() => {
+      this.hideSpeechBubble();
+    }, 4000);
   }
 
   /**
    * Cierra el globo de diálogo
    */
   hideSpeechBubble() {
+    if (this.autoCloseTimer) {
+      clearTimeout(this.autoCloseTimer);
+      this.autoCloseTimer = null;
+    }
+
     const bubble = document.getElementById('mascot-speech-bubble');
     if (!bubble) return;
 
@@ -202,6 +233,10 @@ export class MascotView {
 
     if (this.currentExpression === 'happy' || this.currentExpression === 'wink') {
       this.setExpression('idle');
+    }
+
+    if (this.onBubbleClose) {
+      this.onBubbleClose();
     }
   }
 
