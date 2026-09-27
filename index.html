@@ -6,6 +6,7 @@
   <meta name="description" content="Software de Lógica Simbólica para la construcción de proposiciones moleculares, fórmulas bien formadas (FBF), proceso inverso y tablas de verdad.">
   <title>Lógica Simbólica | Proposiciones Moleculares & FBF</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/practice-mascot.css">
 </head>
 <body>
   <!-- Fondos luminosos abstractos -->
@@ -65,6 +66,9 @@
       </button>
       <button class="nav-tab" data-tab="tab-truthtable">
         <span>📊</span> Tabla de Verdad & Árbol
+      </button>
+      <button class="nav-tab" data-tab="tab-practice">
+        <span>🎯</span> Centro de Prácticas
       </button>
       <button class="nav-tab hidden" id="tab-nav-admin" data-tab="tab-admin">
         <span>⚙️</span> Parámetros
@@ -378,6 +382,13 @@
         </div>
       </div>
     </section>
+
+    <!-- =========================================================================
+         PESTAÑA 5: CENTRO DE PRÁCTICAS GLOBAL (Minijuegos & Desafíos Lógicos)
+         ========================================================================= -->
+    <section id="tab-practice" class="tab-content hidden">
+      <div id="practice-center-container"></div>
+    </section>
   </div>
 
   <!-- =========================================================================
@@ -426,6 +437,9 @@
       </form>
     </div>
   </div>
+
+  <!-- Widget Flotante de la Mascota Robótica OLED (Boleano) -->
+  <div id="mascot-global-widget" class="mascot-widget"></div>
 
   <!-- Contenedor de Notificaciones Toast -->
   <div id="toast-container" class="toast-container"></div>

@@ -1,0 +1,229 @@
+/**
+ * mascotController.js - Coordinador Global de la Mascota Inteligente "Boleano"
+ * Inspecciona el contexto activo de la aplicación para ofrecer explicaciones pedagógicas
+ * precisas, reaccionar emocionalmente y emitir diagnósticos basados en la Red Neuronal.
+ */
+
+import { MascotView } from './mascotView.js';
+import { studentModel } from '../ml/studentModel.js';
+
+export class MascotController {
+  constructor(appContextGetter) {
+    this.getAppContext = appContextGetter; // Función que devuelve el estado global (pestaña activa, FBF, etc.)
+    this.view = new MascotView('mascot-global-widget');
+    this.activeGameContext = null; // Si hay un minijuego en curso
+
+    this._bindEvents();
+  }
+
+  _bindEvents() {
+    this.view.onMascotClick = () => {
+      this.handleMascotClick();
+    };
+
+    this.view.onBubbleClose = () => {
+      // Revertir a reposo al cerrar
+      this.view.setExpression('idle');
+    };
+  }
+
+  /**
+   * Gestiona el clic del usuario sobre la mascota según la pestaña o minijuego activo
+   */
+  handleMascotClick() {
+    // Si el globo ya está visible, se alterna o actualiza
+    if (this.view.isBubbleOpen) {
+      this.view.hideSpeechBubble();
+      return;
+    }
+
+    const explanationHtml = this.generateContextualExplanation();
+    this.view.showSpeechBubble(explanationHtml);
+  }
+
+  /**
+   * Genera el texto pedagógico contextualizado
+   */
+  generateContextualExplanation() {
+    // 1. Si hay un minijuego en curso, dar una pista pedagógica del juego
+    if (this.activeGameContext && this.activeGameContext.isPlaying) {
+      return this._generateGameHint(this.activeGameContext);
+    }
+
+    // 2. Si no, inspeccionar la pestaña activa de la aplicación
+    const context = this.getAppContext ? this.getAppContext() : {};
+    const activeTab = context.activeTab || 'tab-builder';
+
+    switch (activeTab) {
+      case 'tab-builder':
+        return this._explainBuilderTab(context);
+      case 'tab-inverse':
+        return this._explainInverseTab(context);
+      case 'tab-truthtable':
+        return this._explainTruthTableTab(context);
+      case 'tab-practice':
+        return this._explainPracticeLobby();
+      case 'tab-admin':
+        return `
+          <p>🛡️ <strong>Panel de Parámetros:</strong></p>
+          <p>Aquí el administrador puede fijar una notación lógica obligatoria (ej. estándar <em>∧, ∨, →</em> o alternativa <em>&, ∨, ⊃</em>) para todos los usuarios.</p>
+        `;
+      default:
+        return `<p>¡Hola! Selecciona una pestaña o ingresa al <strong>Centro de Prácticas</strong> para ejercitar tu mente lógica.</p>`;
+    }
+  }
+
+  _explainBuilderTab(context) {
+    const tokens = context.tokens || [];
+    if (tokens.length === 0) {
+      return `
+        <p>🧩 <strong>Constructor Visual:</strong></p>
+        <p>Estás en el lienzo de construcción. Puedes definir enunciados para <em>p, q, r...</em> y tocar los conectivos lógicos abajo para ensamblar tu fórmula.</p>
+        <p class="text-muted" style="font-size: 0.8rem; margin-top: 0.4rem;">💡 Tip: Puedes generar proposiciones atómicas aleatorias con el botón 🎲.</p>
+      `;
+    }
+
+    const fbfText = context.fbf || '';
+    const mainOp = context.mainOp || null;
+    let mainOpDesc = 'un conectivo principal';
+
+    if (mainOp === '→' || mainOp === '⊃') mainOpDesc = 'un <strong>Condicional (→)</strong>: solo es falso si el antecedente es V y el consecuente es F.';
+    else if (mainOp === '↔' || mainOp === '≡') mainOpDesc = 'un <strong>Bicondicional (↔)</strong>: es verdadero solo si ambas partes tienen el mismo valor de verdad.';
+    else if (mainOp === '∧' || mainOp === '&') mainOpDesc = 'una <strong>Conjunción (∧)</strong>: requiere que ambas proposiciones sean simultáneamente verdaderas.';
+    else if (mainOp === '∨') mainOpDesc = 'una <strong>Disyunción (∨)</strong>: es verdadera si al menos una de las partes se cumple.';
+    else if (mainOp === '¬' || mainOp === '~') mainOpDesc = 'una <strong>Negación (¬)</strong>: invierte el valor de verdad de la fórmula.';
+
+    return `
+      <p>📝 <strong>Fórmula en Construcción:</strong></p>
+      <div style="background: rgba(0,0,0,0.25); padding: 0.4rem 0.6rem; border-radius: 6px; font-family: monospace; margin: 0.4rem 0;">
+        ${fbfText || 'Fórmula activa'}
+      </div>
+      <p>Tu expresión lógica se rige por ${mainOpDesc}</p>
+      <p style="font-size: 0.8rem; margin-top: 0.4rem;">¡Haz clic en la pestaña de <em>Tabla de Verdad</em> para verificar si es Tautología!</p>
+    `;
+  }
+
+  _explainInverseTab(context) {
+    return `
+      <p>🔄 <strong>Proceso Inverso Determinista:</strong></p>
+      <p>Este módulo lee cualquier Fórmula Bien Formada (FBF) ingresada y construye un <strong>Árbol de Sintaxis Abstracta (AST)</strong> para descomponerla.</p>
+      <p style="font-size: 0.8rem; margin-top: 0.4rem;">A partir del árbol y de los enunciados asignados, traduce fielmente la expresión al lenguaje natural en español respetando la precedencia formal.</p>
+    `;
+  }
+
+  _explainTruthTableTab(context) {
+    const diagnosis = context.diagnosis || document.getElementById('tt-diagnosis-badge')?.textContent || '';
+    let diagExplanation = 'Genera la tabla completa de 2<sup>n</sup> combinaciones posibles.';
+
+    if (diagnosis.includes('TAUTOLOGÍA')) {
+      diagExplanation = '✨ <strong>¡Es una Tautología!</strong> En la columna del conectivo principal todos los valores son <strong>V</strong>. La proposición es verdadera bajo cualquier circunstancia.';
+    } else if (diagnosis.includes('CONTRADICCIÓN')) {
+      diagExplanation = '⚠️ <strong>¡Es una Contradicción!</strong> Todos los valores de la columna principal son <strong>F</strong>. Es una fórmula lógicamente imposible de satisfacer.';
+    } else if (diagnosis.includes('CONTINGENCIA')) {
+      diagExplanation = '⚖️ <strong>Es una Contingencia:</strong> Hay combinaciones que resultan en <strong>V</strong> y otras en <strong>F</strong>. Su valor depende de la verdad fáctica de las atómicas.';
+    }
+
+    return `
+      <p>📊 <strong>Diagnóstico de la Tabla de Verdad:</strong></p>
+      <p>${diagExplanation}</p>
+      <p style="font-size: 0.8rem; margin-top: 0.4rem;">💡 Revisa el <em>Árbol Sintáctico</em> abajo para ver cómo se agrupan las subfórmulas paso a paso.</p>
+    `;
+  }
+
+  _explainPracticeLobby() {
+    const rec = studentModel.getRecommendation();
+    return `
+      <p>🎯 <strong>Centro de Prácticas:</strong></p>
+      <p>${rec.message}</p>
+      <div style="margin-top: 0.5rem; padding: 0.4rem; background: rgba(59, 130, 246, 0.15); border-left: 3px solid var(--primary, #3b82f6); border-radius: 4px; font-size: 0.8rem;">
+        🎮 <strong>Sugerencia de la Red Neuronal:</strong> Juega <em>${rec.gameTitle}</em> en dificultad <em>${rec.difficulty.toUpperCase()}</em>.
+      </div>
+    `;
+  }
+
+  _generateGameHint(gameCtx) {
+    switch (gameCtx.gameId) {
+      case 'tree':
+        return `
+          <p>🌳 <strong>Pista para Árbol Correcto:</strong></p>
+          <p>Observa el nodo superior (la raíz del árbol). Ese es el <strong>conectivo principal</strong> que debe separar los dos lados de la fórmula.</p>
+        `;
+      case 'molecular':
+        return `
+          <p>🧩 <strong>Pista para Moleculares:</strong></p>
+          <p>Identifica los conectivos clave en la frase: <em>"si... entonces" (→)</em>, <em>"y" (∧)</em>, <em>"o" (∨)</em> o <em>"no" (¬)</em>. Asegúrate de agrupar entre paréntesis si hay más de una operación.</p>
+        `;
+      case 'verdict':
+        return `
+          <p>⚖️ <strong>Pista para Veredicto:</strong></p>
+          <p>Prueba mentalmente dos casos: uno donde las atómicas sean verdaderas y otro donde sean falsas. Si obtienes resultados distintos, ¡es casi seguro una <strong>Contingencia</strong>!</p>
+        `;
+      case 'duel':
+        return `
+          <p>⚡ <strong>Pista para el Duelo:</strong></p>
+          <p>¡No lo pienses de más! Evalúa primero los paréntesis interiores y las negaciones para deducir el valor global de la proposición antes de que yo responda.</p>
+        `;
+      default:
+        return `<p>¡Concéntrate! Puedes lograr una gran puntuación.</p>`;
+    }
+  }
+
+  /**
+   * Notifica a la mascota que inició un minijuego
+   */
+  notifyGameStart(gameId, difficulty) {
+    this.activeGameContext = { isPlaying: true, gameId, difficulty };
+    if (gameId === 'duel') {
+      this.view.setExpression('battle');
+    } else {
+      this.view.setExpression('thinking');
+      setTimeout(() => {
+        if (this.view.currentExpression === 'thinking') this.view.setExpression('idle');
+      }, 1500);
+    }
+  }
+
+  /**
+   * Notifica a la mascota que se salió del minijuego (Caso Borde: Cierre limpio)
+   */
+  notifyGameExit() {
+    this.activeGameContext = null;
+    this.view.setExpression('idle');
+
+    // Caso de prueba específico: Si el globo estaba abierto con una pista del juego,
+    // se actualiza elegantemente al contexto del menú o se cierra sin romper nada
+    if (this.view.isBubbleOpen) {
+      this.view.showSpeechBubble(this.generateContextualExplanation());
+    }
+  }
+
+  /**
+   * Notifica el fin de una partida con sus resultados
+   */
+  notifyGameOver(summary) {
+    this.activeGameContext = null;
+
+    if (summary.score > 3 || summary.accuracy >= 75) {
+      this.view.setExpression('happy');
+    } else {
+      this.view.setExpression('dizzy');
+      setTimeout(() => {
+        if (this.view.currentExpression === 'dizzy') this.view.setExpression('idle');
+      }, 2500);
+    }
+  }
+
+  /**
+   * Reacciona visualmente ante eventos puntuales
+   */
+  react(emotion) {
+    this.view.setExpression(emotion);
+    if (emotion === 'happy' || emotion === 'dizzy' || emotion === 'wink') {
+      setTimeout(() => {
+        if (this.view.currentExpression === emotion) {
+          this.view.setExpression('idle');
+        }
+      }, 1800);
+    }
+  }
+}

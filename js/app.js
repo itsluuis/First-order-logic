@@ -10,6 +10,10 @@ import { FBFParser, NOTATION_MODES, NOTATION_SYMBOLS, OPERATORS } from './logic/
 import { TruthTableEngine } from './logic/truthTable.js';
 import { NaturalLanguageTranslator } from './logic/naturalLanguage.js';
 import { RandomGenerators } from './logic/generators.js';
+import { MascotController } from './mascot/mascotController.js';
+import { PracticeEngine } from './practice/practiceEngine.js';
+import { PracticeView } from './practice/practiceView.js';
+import { studentModel } from './ml/studentModel.js';
 
 // Estado global de la aplicación
 const AppState = {
@@ -17,6 +21,7 @@ const AppState = {
   selectedProfileId: 'estudiante',
   currentNotation: NOTATION_MODES.STANDARD,
   theme: 'dark',
+  activeTab: 'tab-builder',
 
   // Estado del Constructor Visual
   builderAtomics: [
@@ -273,6 +278,7 @@ function initAdminEvents() {
 // SISTEMA DE NAVEGACIÓN ENTRE PESTAÑAS
 // =============================================================================
 function switchTab(tabId) {
+  AppState.activeTab = tabId;
   const tabs = document.querySelectorAll('.nav-tab');
   tabs.forEach(t => {
     if (t.getAttribute('data-tab') === tabId) t.classList.add('active');
@@ -284,6 +290,15 @@ function switchTab(tabId) {
     if (s.id === tabId) s.classList.remove('hidden');
     else s.classList.add('hidden');
   });
+
+  if (tabId === 'tab-practice' && practiceView && practiceEngine && !practiceEngine.isPlaying) {
+    practiceView.renderLobby(studentModel.getRecommendation());
+  }
+
+  // Si el globo de la mascota está abierto, refrescar el contexto suavemente
+  if (mascotController && mascotController.view.isBubbleOpen) {
+    mascotController.view.showSpeechBubble(mascotController.generateContextualExplanation());
+  }
 }
 
 function initTabs() {
@@ -842,6 +857,191 @@ function buildTreeHtml(node) {
 }
 
 // =============================================================================
+// COORDINACIÓN DEL CENTRO DE PRÁCTICAS Y MASCOTA ROBÓTICA
+// =============================================================================
+let practiceEngine = null;
+let practiceView = null;
+let mascotController = null;
+let isWaitingDuelResponse = false;
+
+function loadChallengeToView(challenge) {
+  if (!challenge) return;
+
+  if (challenge.type === 'tree') {
+    practiceView.renderTreeChallenge(challenge);
+  } else if (challenge.type === 'molecular') {
+    practiceView.renderMolecularChallenge(challenge);
+  } else if (challenge.type === 'verdict') {
+    practiceView.renderVerdictChallenge(challenge);
+  } else if (challenge.type === 'duel') {
+    practiceView.renderDuelChallenge(challenge);
+    startDuelMascotTurn(challenge);
+  }
+}
+
+function startDuelMascotTurn(challenge) {
+  isWaitingDuelResponse = true;
+  mascotController.react('thinking');
+  practiceView.updateDuelMascotBanner('🤖 Boleano está evaluando mentalmente la fórmula...');
+
+  studentModel.simulateMascotDecision(challenge.expectedTruthValue, practiceEngine.activeDifficulty)
+    .then(mascotResult => {
+      if (isWaitingDuelResponse && practiceEngine.isPlaying && practiceEngine.currentChallenge === challenge) {
+        isWaitingDuelResponse = false;
+        const answerText = mascotResult.answer ? 'VERDADERO' : 'FALSO';
+
+        if (mascotResult.isCorrect) {
+          practiceView.updateDuelMascotBanner(`🤖 Boleano respondió ${answerText} y ¡ha acertado!`, true);
+          practiceEngine.recordMascotDuelPoint();
+          showToast(`Boleano acertó (${answerText})`, 'info');
+          setTimeout(() => {
+            if (practiceEngine.isPlaying) {
+              loadChallengeToView(practiceEngine.nextChallenge());
+            }
+          }, 1200);
+        } else {
+          practiceView.updateDuelMascotBanner(`🤖 Boleano respondió ${answerText} y ¡ha fallado! Tu turno...`, true);
+          mascotController.react('dizzy');
+          showToast(`¡Boleano se equivocó! Tienes la oportunidad de responder`, 'info');
+          isWaitingDuelResponse = true; // El jugador todavía puede responder
+        }
+      }
+    });
+}
+
+function handleDuelPlayerAnswer(playerVal) {
+  if (!isWaitingDuelResponse && practiceEngine.activeGameId === 'duel') {
+    return;
+  }
+
+  isWaitingDuelResponse = false;
+  const res = practiceEngine.evaluateDuelPlayerAnswer(playerVal);
+  if (res.isCorrect) {
+    showToast('¡Acertaste antes que la IA!', 'success');
+  } else {
+    showToast('Valor de verdad incorrecto', 'error');
+  }
+
+  setTimeout(() => {
+    if (practiceEngine.isPlaying) {
+      loadChallengeToView(practiceEngine.nextChallenge());
+    }
+  }, 600);
+}
+
+function initPracticeAndMascot() {
+  mascotController = new MascotController(() => {
+    let currentFbf = '';
+    let mainOp = null;
+    try {
+      const fbfOutput = document.getElementById('builder-fbf-output');
+      if (fbfOutput && fbfOutput.textContent !== '--') {
+        currentFbf = fbfOutput.textContent.trim();
+        const ast = FBFParser.parse(currentFbf, AppState.currentNotation);
+        if (ast && ast.type === 'binary') mainOp = ast.op;
+        else if (ast && ast.type === 'unary') mainOp = ast.op;
+      }
+    } catch (_) {}
+
+    return {
+      activeTab: AppState.activeTab || 'tab-builder',
+      tokens: AppState.builderTokens,
+      fbf: currentFbf,
+      mainOp: mainOp
+    };
+  });
+
+  practiceView = new PracticeView('practice-center-container');
+
+  practiceEngine = new PracticeEngine({
+    mascotController: mascotController,
+    onTick: (seconds) => {
+      practiceView.updateTimerDisplay(seconds);
+    },
+    onScoreUpdate: (scores) => {
+      practiceView.updateScore(scores);
+    },
+    onGameOver: (summary) => {
+      isWaitingDuelResponse = false;
+      practiceView.renderSummary(summary);
+    }
+  });
+
+  practiceView.onSelectGame = (gameId, difficulty) => {
+    const titles = {
+      tree: '🌳 Árbol Correcto',
+      molecular: '🧩 Moleculares',
+      verdict: '⚖️ Veredicto',
+      duel: '⚡ Duelo contra la Mascota IA'
+    };
+    practiceView.renderGameArena(titles[gameId] || 'Minijuego', gameId === 'duel');
+    const challenge = practiceEngine.startGame(gameId, difficulty);
+    loadChallengeToView(challenge);
+  };
+
+  practiceView.onExitGame = () => {
+    isWaitingDuelResponse = false;
+    practiceEngine.stopGame();
+    practiceView.renderLobby(studentModel.getRecommendation());
+  };
+
+  practiceView.onPlayAgain = (gameId, difficulty) => {
+    const titles = {
+      tree: '🌳 Árbol Correcto',
+      molecular: '🧩 Moleculares',
+      verdict: '⚖️ Veredicto',
+      duel: '⚡ Duelo contra la Mascota IA'
+    };
+    practiceView.renderGameArena(titles[gameId] || 'Minijuego', gameId === 'duel');
+    const challenge = practiceEngine.startGame(gameId, difficulty);
+    loadChallengeToView(challenge);
+  };
+
+  practiceView.onAnswer = (payload) => {
+    if (payload.type === 'tree') {
+      const res = practiceEngine.evaluateTreeAnswer(payload.selectedFBF);
+      if (res.isCorrect) {
+        showToast('¡Correcto!', 'success');
+        setTimeout(() => {
+          if (practiceEngine.isPlaying) {
+            loadChallengeToView(practiceEngine.nextChallenge());
+          }
+        }, 300);
+      }
+      return res;
+    } else if (payload.type === 'molecular') {
+      const res = practiceEngine.evaluateMolecularAnswer(payload.tokens);
+      if (res.isCorrect) {
+        showToast('¡Fórmula Correcta!', 'success');
+        setTimeout(() => {
+          if (practiceEngine.isPlaying) {
+            loadChallengeToView(practiceEngine.nextChallenge());
+          }
+        }, 500);
+      }
+      return res;
+    } else if (payload.type === 'verdict') {
+      const res = practiceEngine.evaluateVerdictAnswer(payload.selectedVerdict);
+      if (res.isCorrect) {
+        showToast('¡Veredicto Correcto!', 'success');
+      } else {
+        showToast(`Incorrecto. Era ${res.correctVerdict} (-1 punto)`, 'error');
+      }
+      setTimeout(() => {
+        if (practiceEngine.isPlaying) {
+          loadChallengeToView(practiceEngine.nextChallenge());
+        }
+      }, 400);
+      return res;
+    } else if (payload.type === 'duel') {
+      handleDuelPlayerAnswer(payload.playerValue);
+    }
+  };
+
+  practiceView.renderLobby(studentModel.getRecommendation());
+}
+
+// =============================================================================
 // INICIALIZACIÓN GLOBAL DE LA APLICACIÓN
 // =============================================================================
 document.addEventListener('DOMContentLoaded', () => {
@@ -853,4 +1053,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initVisualBuilder();
   initInverseProcess();
   initTruthTableAndTree();
+  initPracticeAndMascot();
 });
