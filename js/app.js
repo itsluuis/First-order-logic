@@ -6,6 +6,7 @@
  */
 
 import { dbService, PROFILES } from './storage.js';
+import { sectionsDB } from './sectionsStorage.js';
 import { FBFParser, NOTATION_MODES, NOTATION_SYMBOLS, OPERATORS } from './logic/ast.js';
 import { TruthTableEngine } from './logic/truthTable.js';
 import { NaturalLanguageTranslator } from './logic/naturalLanguage.js';
@@ -21,6 +22,7 @@ const AppState = {
   currentUser: null,
   selectedProfileId: 'estudiante',
   authMode: 'login',
+  currentSectionId: null,
   currentNotation: NOTATION_MODES.STANDARD,
   theme: 'dark',
   activeTab: 'tab-builder',
@@ -270,13 +272,22 @@ function initAuth() {
   document.getElementById('btn-logout')?.addEventListener('click', () => {
     dbService.logout();
     AppState.currentUser = null;
+    AppState.currentSectionId = null;
 
     // Recargar modelo neuronal para limpiar memoria de la sesión anterior
     studentModel.reloadForCurrentUser();
 
+    // Restaurar visibilidad estándar de pestañas
+    document.querySelectorAll('#main-nav-tabs .nav-tab').forEach(t => {
+      if (t.id === 'tab-nav-admin') {
+        t.classList.add('hidden');
+      } else {
+        t.classList.remove('hidden');
+      }
+    });
+
     // Resetear a pestaña principal (Constructor Visual)
     switchTab('tab-builder');
-    document.getElementById('tab-nav-admin')?.classList.add('hidden');
 
     showToast('Has cerrado sesión correctamente.', 'info');
     openAuthModal();
@@ -443,13 +454,30 @@ function loginSuccess(session) {
   if (session.role === 'admin') {
     roleBadge.textContent = 'ADMINISTRADOR';
     roleBadge.className = 'badge badge-admin';
-    document.getElementById('tab-nav-admin')?.classList.remove('hidden');
+
+    // REQUISITO ESTRICTO: Para el Administrador la ÚNICA pestaña visible es la de Parámetros
+    document.querySelectorAll('#main-nav-tabs .nav-tab').forEach(t => {
+      if (t.id === 'tab-nav-admin') {
+        t.classList.remove('hidden');
+      } else {
+        t.classList.add('hidden');
+      }
+    });
+
+    switchTab('tab-admin');
     updateAdminSettingsUI();
   } else {
-    // Si no es admin, garantizar que NO quede en la pestaña de administración
-    document.getElementById('tab-nav-admin')?.classList.add('hidden');
+    // Si no es admin, mostrar todas las pestañas estándar y ocultar la de administración
+    document.querySelectorAll('#main-nav-tabs .nav-tab').forEach(t => {
+      if (t.id === 'tab-nav-admin') {
+        t.classList.add('hidden');
+      } else {
+        t.classList.remove('hidden');
+      }
+    });
+
     const currentActiveTab = document.querySelector('.nav-tab.active');
-    if (currentActiveTab && currentActiveTab.getAttribute('data-tab') === 'tab-admin') {
+    if (!currentActiveTab || currentActiveTab.getAttribute('data-tab') === 'tab-admin') {
       switchTab('tab-builder');
     }
 
@@ -474,6 +502,34 @@ function updateAdminSettingsUI() {
   if (notSelect) {
     notSelect.value = settings.forcedNotation || 'none';
   }
+
+  // 1. Poblar selector de Usuarios (Estudiantes y Profesores)
+  const userSelect = document.getElementById('admin-user-select');
+  if (userSelect) {
+    userSelect.innerHTML = '<option value="">-- Selecciona un usuario --</option>';
+    const users = dbService.getUsers();
+    users.forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u.id;
+      const roleText = u.role === 'profesor' ? 'Profesor' : 'Estudiante';
+      opt.textContent = `[${roleText}] ${u.username}`;
+      userSelect.appendChild(opt);
+    });
+  }
+
+  // 2. Poblar selector de Secciones
+  const secSelect = document.getElementById('admin-section-select');
+  if (secSelect) {
+    secSelect.innerHTML = '<option value="">-- Selecciona una sección --</option>';
+    const sections = sectionsDB.getSections();
+    sections.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      const taskCount = Array.isArray(s.tasks) ? s.tasks.length : 0;
+      opt.textContent = `${s.name} (${s.professorName}) - ${taskCount} tareas`;
+      secSelect.appendChild(opt);
+    });
+  }
 }
 
 function initAdminEvents() {
@@ -485,6 +541,65 @@ function initAdminEvents() {
       updateNotationUI();
     } else {
       showToast(res.message, 'error');
+    }
+  });
+
+  // Eliminar usuario seleccionado
+  document.getElementById('btn-admin-delete-user')?.addEventListener('click', () => {
+    const userSelect = document.getElementById('admin-user-select');
+    const userId = userSelect ? userSelect.value : '';
+    if (!userId) {
+      showToast('Por favor selecciona un usuario a eliminar.', 'info');
+      return;
+    }
+
+    const user = dbService.findUserById(userId);
+    const userName = user ? user.username : 'este usuario';
+    const isProf = user && user.role === 'profesor';
+
+    const confirmMsg = isProf
+      ? `¿Estás seguro de eliminar al profesor "${userName}"? Esto también eliminará en cascada todas sus secciones creadas y sus tareas.`
+      : `¿Estás seguro de eliminar al estudiante "${userName}"? Se desvinculará de todas sus secciones y se limpiará su perfil.`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    const res = dbService.deleteUser(userId);
+    if (res.success) {
+      if (isProf) {
+        sectionsDB.deleteSectionsByProfessor(userId);
+      } else {
+        sectionsDB.removeStudentFromAllSections(userId);
+      }
+
+      showToast(`Usuario "${userName}" eliminado correctamente.`, 'success');
+      updateAdminSettingsUI();
+    } else {
+      showToast(res.message || 'Error al eliminar usuario.', 'error');
+    }
+  });
+
+  // Eliminar sección seleccionada
+  document.getElementById('btn-admin-delete-section')?.addEventListener('click', () => {
+    const secSelect = document.getElementById('admin-section-select');
+    const sectionId = secSelect ? secSelect.value : '';
+    if (!sectionId) {
+      showToast('Por favor selecciona una sección a eliminar.', 'info');
+      return;
+    }
+
+    const section = sectionsDB.getSectionById(sectionId);
+    const secName = section ? section.name : 'esta sección';
+
+    if (!window.confirm(`¿Estás seguro de eliminar permanentemente la sección "${secName}" y todas sus tareas?`)) {
+      return;
+    }
+
+    const res = sectionsDB.deleteSection(sectionId);
+    if (res.success) {
+      showToast(`Sección "${secName}" eliminada correctamente.`, 'success');
+      updateAdminSettingsUI();
+    } else {
+      showToast('Error al eliminar sección.', 'error');
     }
   });
 }
@@ -505,6 +620,10 @@ function switchTab(tabId) {
     if (s.id === tabId) s.classList.remove('hidden');
     else s.classList.add('hidden');
   });
+
+  if (tabId === 'tab-sections') {
+    renderSectionsList();
+  }
 
   if (tabId === 'tab-practice' && practiceView && practiceEngine && !practiceEngine.isPlaying) {
     practiceView.renderLobby(studentModel.getRecommendation());
@@ -1284,6 +1403,418 @@ function initPracticeAndMascot() {
 }
 
 // =============================================================================
+// MÓDULO DE SECCIONES ACADÉMICAS Y TO-DO LIST COLABORATIVA
+// =============================================================================
+function initSectionsModule() {
+  const modalCreateSec = document.getElementById('modal-create-section');
+  const btnOpenCreateSec = document.getElementById('btn-open-create-section');
+  const btnCancelCreateSec = document.getElementById('btn-cancel-create-section');
+  const formCreateSec = document.getElementById('form-create-section');
+  const btnBackToSections = document.getElementById('btn-back-to-sections');
+  const formAddTask = document.getElementById('form-add-task');
+  const btnAddStudentAction = document.getElementById('btn-add-student-action');
+
+  // Abrir modal de creación de sección (solo profesor)
+  btnOpenCreateSec?.addEventListener('click', () => {
+    const nameInput = document.getElementById('create-section-name');
+    if (nameInput) nameInput.value = '';
+
+    const container = document.getElementById('create-section-students-container');
+    if (container) {
+      container.innerHTML = '';
+      const students = dbService.getUsers().filter(u => u.role === 'estudiante');
+      if (students.length === 0) {
+        container.innerHTML = '<span class="text-muted" style="font-size: 0.8rem;">No hay estudiantes registrados aún en el sistema.</span>';
+      } else {
+        students.forEach(st => {
+          const label = document.createElement('label');
+          label.className = 'students-checkbox-item';
+          label.innerHTML = `
+            <input type="checkbox" name="selected_students" value="${st.id}" style="accent-color: var(--accent-cyan); width: 16px; height: 16px;">
+            <span>${st.username}</span>
+          `;
+          container.appendChild(label);
+        });
+      }
+    }
+
+    modalCreateSec?.classList.add('active');
+    nameInput?.focus();
+  });
+
+  // Cancelar modal de creación
+  btnCancelCreateSec?.addEventListener('click', () => {
+    modalCreateSec?.classList.remove('active');
+  });
+
+  // Formulario crear sección
+  formCreateSec?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const nameInput = document.getElementById('create-section-name');
+    const name = nameInput ? nameInput.value.trim() : '';
+
+    if (!name) {
+      showToast('Por favor introduce un nombre para la sección.', 'info');
+      return;
+    }
+
+    const checkboxes = formCreateSec.querySelectorAll('input[name="selected_students"]:checked');
+    const studentIds = Array.from(checkboxes).map(cb => cb.value);
+
+    const currentUser = AppState.currentUser;
+    const res = sectionsDB.createSection({
+      name,
+      professorId: currentUser ? currentUser.userId : '',
+      professorName: currentUser ? currentUser.username : 'Profesor',
+      studentIds
+    });
+
+    if (res.success) {
+      showToast(`¡Sección "${res.section.name}" creada con éxito!`, 'success');
+      modalCreateSec?.classList.remove('active');
+      renderSectionsList();
+    } else {
+      showToast(res.message, 'error');
+    }
+  });
+
+  // Botón para volver a la lista de secciones
+  btnBackToSections?.addEventListener('click', () => {
+    AppState.currentSectionId = null;
+    document.getElementById('section-detail-view')?.classList.add('hidden');
+    document.getElementById('sections-list-view')?.classList.remove('hidden');
+    renderSectionsList();
+  });
+
+  // Profesor: Agregar nueva tarea To-Do
+  formAddTask?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = document.getElementById('input-new-task');
+    const text = input ? input.value.trim() : '';
+
+    if (!text) {
+      showToast('Por favor escribe la descripción de la tarea.', 'info');
+      return;
+    }
+
+    const res = sectionsDB.addTask(AppState.currentSectionId, text);
+    if (res.success) {
+      showToast('Tarea asignada a la sección.', 'success');
+      if (input) input.value = '';
+      openSectionDetail(AppState.currentSectionId);
+    } else {
+      showToast(res.message || 'Error al agregar tarea.', 'error');
+    }
+  });
+
+  // Profesor: Añadir estudiante a sección existente
+  btnAddStudentAction?.addEventListener('click', () => {
+    const select = document.getElementById('select-add-student-to-section');
+    const studentId = select ? select.value : '';
+    if (!studentId) {
+      showToast('Selecciona un alumno para añadir.', 'info');
+      return;
+    }
+
+    const res = sectionsDB.addStudentToSection(AppState.currentSectionId, studentId);
+    if (res.success) {
+      showToast('Estudiante añadido a la sección.', 'success');
+      openSectionDetail(AppState.currentSectionId);
+    } else {
+      showToast(res.message, 'error');
+    }
+  });
+}
+
+function renderSectionsList() {
+  const listView = document.getElementById('sections-list-view');
+  const detailView = document.getElementById('section-detail-view');
+  const grid = document.getElementById('sections-grid');
+  const emptyState = document.getElementById('sections-empty-state');
+  const emptyTitle = document.getElementById('sections-empty-title');
+  const emptyDesc = document.getElementById('sections-empty-desc');
+  const btnCreate = document.getElementById('btn-open-create-section');
+
+  if (!listView || !grid) return;
+
+  listView.classList.remove('hidden');
+  detailView?.classList.add('hidden');
+  grid.innerHTML = '';
+
+  const user = AppState.currentUser;
+  if (!user) return;
+
+  let sections = [];
+  if (user.role === 'profesor') {
+    btnCreate?.classList.remove('hidden');
+    sections = sectionsDB.getSectionsForProfessor(user.userId);
+    if (emptyTitle) emptyTitle.textContent = 'Aún no has creado ninguna sección';
+    if (emptyDesc) emptyDesc.textContent = 'Haz clic en "+ Crear Nueva Sección" para organizar a tus estudiantes y asignar tareas.';
+  } else {
+    // Estudiante
+    btnCreate?.classList.add('hidden');
+    sections = sectionsDB.getSectionsForStudent(user.userId);
+    if (emptyTitle) emptyTitle.textContent = 'No perteneces a ninguna sección todavía';
+    if (emptyDesc) emptyDesc.textContent = 'Tu profesor te añadirá a su sección para que puedas ver y completar tus tareas.';
+  }
+
+  if (sections.length === 0) {
+    emptyState?.classList.remove('hidden');
+    grid.classList.add('hidden');
+    return;
+  }
+
+  emptyState?.classList.add('hidden');
+  grid.classList.remove('hidden');
+
+  sections.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'section-card';
+    card.setAttribute('data-section-id', s.id);
+
+    // Conteo de tareas simplificado (REQUISITO: solo decir "X Tareas")
+    let count = 0;
+    if (user.role === 'profesor') {
+      count = Array.isArray(s.tasks) ? s.tasks.length : 0;
+    } else {
+      count = Array.isArray(s.tasks)
+        ? s.tasks.filter(t => !t.completedByStudentIds || !t.completedByStudentIds.includes(user.userId)).length
+        : 0;
+    }
+
+    const taskText = count === 1 ? '1 Tarea' : `${count} Tareas`;
+
+    card.innerHTML = `
+      <div>
+        <div class="section-card-title">${s.name}</div>
+        <div class="text-muted" style="font-size: 0.82rem;">Prof. ${s.professorName}</div>
+      </div>
+      <div class="section-card-footer">
+        <span class="section-tasks-badge">${taskText}</span>
+      </div>
+    `;
+
+    // REQUISITO APROBADO: Al clickear sobre la tarjeta se accede a la sección
+    card.addEventListener('click', () => {
+      openSectionDetail(s.id);
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+function openSectionDetail(sectionId) {
+  AppState.currentSectionId = sectionId;
+  const section = sectionsDB.getSectionById(sectionId);
+  if (!section) {
+    showToast('Sección no encontrada.', 'error');
+    renderSectionsList();
+    return;
+  }
+
+  const listView = document.getElementById('sections-list-view');
+  const detailView = document.getElementById('section-detail-view');
+  const detailName = document.getElementById('section-detail-name');
+  const detailProf = document.getElementById('section-detail-prof');
+  const detailBadge = document.getElementById('section-detail-badge');
+  const profControls = document.getElementById('section-prof-controls');
+
+  listView?.classList.add('hidden');
+  detailView?.classList.remove('hidden');
+
+  if (detailName) detailName.textContent = section.name;
+  if (detailProf) detailProf.textContent = `Profesor a cargo: ${section.professorName}`;
+
+  const user = AppState.currentUser;
+  const isProfessor = user && user.role === 'profesor';
+
+  if (detailBadge) {
+    detailBadge.textContent = isProfessor ? 'Vista de Profesor' : 'Vista de Estudiante';
+    detailBadge.className = isProfessor ? 'badge badge-profesor' : 'badge badge-user';
+  }
+
+  if (isProfessor) {
+    profControls?.classList.remove('hidden');
+
+    // 1. Renderizar lista de alumnos inscritos (chips con botón quitar)
+    const roster = document.getElementById('section-students-roster');
+    if (roster) {
+      roster.innerHTML = '';
+      if (!section.studentIds || section.studentIds.length === 0) {
+        roster.innerHTML = '<span class="text-muted" style="font-size: 0.8rem;">No hay estudiantes inscritos aún.</span>';
+      } else {
+        section.studentIds.forEach(stId => {
+          const stUser = dbService.findUserById(stId);
+          const stName = stUser ? stUser.username : 'Estudiante';
+          const chip = document.createElement('div');
+          chip.className = 'student-chip';
+          chip.innerHTML = `
+            <span>${stName}</span>
+            <button type="button" class="student-chip-btn-remove" title="Quitar de la sección">&times;</button>
+          `;
+          chip.querySelector('.student-chip-btn-remove')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (window.confirm(`¿Quitar a "${stName}" de esta sección?`)) {
+              sectionsDB.removeStudentFromSection(section.id, stId);
+              showToast(`"${stName}" removido de la sección.`, 'info');
+              openSectionDetail(section.id);
+            }
+          });
+          roster.appendChild(chip);
+        });
+      }
+    }
+
+    // 2. Poblar selector para añadir alumnos registrados que aún no estén en esta sección
+    const selectAdd = document.getElementById('select-add-student-to-section');
+    if (selectAdd) {
+      selectAdd.innerHTML = '<option value="">-- Añadir alumno registrado --</option>';
+      const allStudents = dbService.getUsers().filter(u => u.role === 'estudiante');
+      const unassigned = allStudents.filter(st => !section.studentIds.includes(st.id));
+
+      unassigned.forEach(st => {
+        const opt = document.createElement('option');
+        opt.value = st.id;
+        opt.textContent = st.username;
+        selectAdd.appendChild(opt);
+      });
+    }
+
+    // 3. Renderizar tareas con progreso interactivo para el profesor
+    renderProfessorTasks(section);
+
+  } else {
+    // Es Estudiante
+    profControls?.classList.add('hidden');
+    renderStudentTasks(section, user.userId);
+  }
+}
+
+function renderProfessorTasks(section) {
+  const container = document.getElementById('section-tasks-list');
+  const emptyState = document.getElementById('section-tasks-empty');
+  if (!container) return;
+
+  container.innerHTML = '';
+  const tasks = Array.isArray(section.tasks) ? section.tasks : [];
+
+  if (tasks.length === 0) {
+    emptyState?.classList.remove('hidden');
+    return;
+  }
+  emptyState?.classList.add('hidden');
+
+  const totalEnrolled = (section.studentIds || []).length;
+
+  tasks.forEach(t => {
+    const completedList = Array.isArray(t.completedByStudentIds) ? t.completedByStudentIds : [];
+    const completedCount = completedList.length;
+
+    const taskEl = document.createElement('div');
+    taskEl.className = 'task-item';
+
+    taskEl.innerHTML = `
+      <div class="task-left">
+        <span class="task-text">${t.text}</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <span class="task-progress-pill" title="Clic para ver detalle de alumnos">${completedCount} de ${totalEnrolled} completaron</span>
+        <button type="button" class="btn btn-icon btn-delete-task" title="Eliminar tarea" style="color: var(--accent-rose);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
+      </div>
+    `;
+
+    // Contenedor expandible de detalle
+    const dropdown = document.createElement('div');
+    dropdown.className = 'task-progress-dropdown hidden';
+
+    // Generar nombres de completados y pendientes
+    const completedNames = completedList.map(id => {
+      const u = dbService.findUserById(id);
+      return u ? u.username : 'Estudiante';
+    });
+    const pendingNames = (section.studentIds || []).filter(id => !completedList.includes(id)).map(id => {
+      const u = dbService.findUserById(id);
+      return u ? u.username : 'Estudiante';
+    });
+
+    dropdown.innerHTML = `
+      <div><strong class="text-emerald">Completaron (${completedNames.length}):</strong> ${completedNames.length > 0 ? completedNames.join(', ') : 'Ninguno aún'}</div>
+      <div><strong class="text-muted">Pendientes (${pendingNames.length}):</strong> ${pendingNames.length > 0 ? pendingNames.join(', ') : 'Ninguno'}</div>
+    `;
+
+    taskEl.querySelector('.task-progress-pill')?.addEventListener('click', () => {
+      dropdown.classList.toggle('hidden');
+    });
+
+    taskEl.querySelector('.btn-delete-task')?.addEventListener('click', () => {
+      if (window.confirm(`¿Deseas eliminar esta tarea de la sección?`)) {
+        sectionsDB.deleteTask(section.id, t.id);
+        showToast('Tarea eliminada.', 'info');
+        openSectionDetail(section.id);
+      }
+    });
+
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(taskEl);
+    wrapper.appendChild(dropdown);
+    container.appendChild(wrapper);
+  });
+}
+
+function renderStudentTasks(section, studentId) {
+  const container = document.getElementById('section-tasks-list');
+  const emptyState = document.getElementById('section-tasks-empty');
+  if (!container) return;
+
+  container.innerHTML = '';
+  const allTasks = Array.isArray(section.tasks) ? section.tasks : [];
+
+  // Filtrar solo tareas que este estudiante aún NO ha marcado como realizadas
+  const pendingTasks = allTasks.filter(t => {
+    return !t.completedByStudentIds || !t.completedByStudentIds.includes(studentId);
+  });
+
+  if (pendingTasks.length === 0) {
+    emptyState?.classList.remove('hidden');
+    return;
+  }
+  emptyState?.classList.add('hidden');
+
+  pendingTasks.forEach(t => {
+    const taskEl = document.createElement('div');
+    taskEl.className = 'task-item';
+
+    taskEl.innerHTML = `
+      <div class="task-left">
+        <button type="button" class="task-checkbox" title="Marcar como realizada" data-task-id="${t.id}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </button>
+        <span class="task-text">${t.text}</span>
+      </div>
+    `;
+
+    // REQUISITO APROBADO: Al marcar la casilla, desaparece inmediatamente para el alumno
+    const checkboxBtn = taskEl.querySelector('.task-checkbox');
+    checkboxBtn?.addEventListener('click', () => {
+      checkboxBtn.classList.add('checked');
+      taskEl.style.opacity = '0.5';
+      taskEl.style.transform = 'scale(0.98)';
+      taskEl.style.transition = 'all 0.25s ease';
+
+      setTimeout(() => {
+        sectionsDB.markTaskCompleted(section.id, t.id, studentId);
+        showToast('¡Tarea completada!', 'success');
+        openSectionDetail(section.id);
+      }, 250);
+    });
+
+    container.appendChild(taskEl);
+  });
+}
+
+// =============================================================================
 // INICIALIZACIÓN GLOBAL DE LA APLICACIÓN
 // =============================================================================
 document.addEventListener('DOMContentLoaded', () => {
@@ -1292,6 +1823,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initTabs();
   initNotationEvents();
   initAdminEvents();
+  initSectionsModule();
   initVisualBuilder();
   initInverseProcess();
   initTruthTableAndTree();

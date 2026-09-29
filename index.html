@@ -72,6 +72,9 @@
       <button class="nav-tab" data-tab="tab-practice">
         <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg></span> Centro de Prácticas
       </button>
+      <button class="nav-tab" id="tab-nav-sections" data-tab="tab-sections">
+        <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span> Secciones
+      </button>
       <button class="nav-tab hidden" id="tab-nav-admin" data-tab="tab-admin">
         <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></span> Parámetros
       </button>
@@ -381,6 +384,44 @@
               Guardar Política de Notación
             </button>
           </div>
+
+          <!-- Bloque de Eliminación de Usuarios -->
+          <div class="card card-subtle" style="margin-top: 1.5rem;">
+            <h3 class="card-title" style="font-size: 1.05rem;">Gestión de Usuarios Registrados</h3>
+            <p class="card-subtitle" style="margin-bottom: 1.25rem;">
+              Selecciona un estudiante o profesor de la base de datos local para eliminarlo del sistema. Al eliminar un profesor, se eliminarán en cascada sus secciones creadas.
+            </p>
+
+            <div class="form-group">
+              <label class="form-label" for="admin-user-select">Usuario a Eliminar:</label>
+              <select id="admin-user-select" class="form-input">
+                <option value="">-- Selecciona un usuario --</option>
+              </select>
+            </div>
+
+            <button type="button" id="btn-admin-delete-user" class="btn" style="background: var(--accent-rose); border: 1px solid var(--accent-rose); color: #fff; font-weight: 600;">
+              Eliminar Usuario Seleccionado
+            </button>
+          </div>
+
+          <!-- Bloque de Eliminación de Secciones -->
+          <div class="card card-subtle" style="margin-top: 1.5rem;">
+            <h3 class="card-title" style="font-size: 1.05rem;">Gestión de Secciones Académicas</h3>
+            <p class="card-subtitle" style="margin-bottom: 1.25rem;">
+              Selecciona una sección activa para eliminarla junto con todas sus tareas asociadas de la base de datos local.
+            </p>
+
+            <div class="form-group">
+              <label class="form-label" for="admin-section-select">Sección a Eliminar:</label>
+              <select id="admin-section-select" class="form-input">
+                <option value="">-- Selecciona una sección --</option>
+              </select>
+            </div>
+
+            <button type="button" id="btn-admin-delete-section" class="btn" style="background: var(--accent-rose); border: 1px solid var(--accent-rose); color: #fff; font-weight: 600;">
+              Eliminar Sección Seleccionada
+            </button>
+          </div>
         </div>
       </div>
     </section>
@@ -390,6 +431,103 @@
          ========================================================================= -->
     <section id="tab-practice" class="tab-content hidden">
       <div id="practice-center-container"></div>
+    </section>
+
+    <!-- =========================================================================
+         PESTAÑA 6: SECCIONES ACADÉMICAS (To-Do List Colaborativa)
+         ========================================================================= -->
+    <section id="tab-sections" class="tab-content hidden">
+      <div class="card">
+        <!-- Vista 1: Lista de Secciones -->
+        <div id="sections-list-view">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 class="card-title" id="sections-main-title">Secciones Académicas</h2>
+              <p class="card-subtitle" id="sections-main-subtitle">
+                Gestión de clases y tareas prácticas To-Do del curso de Lógica Simbólica.
+              </p>
+            </div>
+            <!-- Botón exclusivo para profesores -->
+            <button type="button" id="btn-open-create-section" class="btn btn-primary hidden">
+              <span>+</span> Crear Nueva Sección
+            </button>
+          </div>
+
+          <!-- Grid de tarjetas de secciones clickeables -->
+          <div id="sections-grid" class="sections-cards-grid" style="margin-top: 1.5rem;"></div>
+
+          <!-- Estado vacío si no hay secciones -->
+          <div id="sections-empty-state" class="empty-state hidden" style="text-align: center; padding: 3rem 1.5rem;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.75rem; opacity: 0.7;">📋</div>
+            <h3 id="sections-empty-title" style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem;">No hay secciones disponibles</h3>
+            <p id="sections-empty-desc" class="text-muted" style="max-width: 420px; margin: 0 auto; font-size: 0.88rem;">
+              Las secciones creadas por profesores aparecerán aquí para realizar seguimiento de tareas.
+            </p>
+          </div>
+        </div>
+
+        <!-- Vista 2: Detalle de Sección (To-Do List & Alumnos) -->
+        <div id="section-detail-view" class="hidden">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem;">
+            <button type="button" id="btn-back-to-sections" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.4rem 0.85rem;">
+              &larr; Volver a Mis Secciones
+            </button>
+            <span id="section-detail-badge" class="badge badge-profesor">Sección</span>
+          </div>
+
+          <div class="card-header" style="padding: 0; margin-bottom: 1.75rem;">
+            <h2 class="card-title" id="section-detail-name" style="font-size: 1.4rem;">Nombre de la Sección</h2>
+            <p class="card-subtitle" id="section-detail-prof">Profesor a cargo: ...</p>
+          </div>
+
+          <!-- Controles de Profesor: Agregar Tarea & Administrar Alumnos -->
+          <div id="section-prof-controls" class="hidden" style="margin-bottom: 2rem;">
+            <!-- Formulario para agregar tarea -->
+            <div class="card card-subtle" style="margin-bottom: 1.25rem;">
+              <h3 class="card-title" style="font-size: 1rem; margin-bottom: 0.75rem;">Asignar Nueva Tarea (To-Do)</h3>
+              <form id="form-add-task" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <input type="text" id="input-new-task" class="form-input" placeholder="Escribe la descripción de la tarea (ej. Resolver ejercicio de FBF)..." style="flex: 1; min-width: 240px;" required>
+                <button type="submit" class="btn btn-primary" style="white-space: nowrap;">
+                  + Agregar Tarea
+                </button>
+              </form>
+            </div>
+
+            <!-- Administrador de Estudiantes Inscritos -->
+            <div class="card card-subtle">
+              <h3 class="card-title" style="font-size: 1rem; margin-bottom: 0.5rem;">Estudiantes en esta Sección</h3>
+              <p class="card-subtitle" style="font-size: 0.8rem; margin-bottom: 0.75rem;">
+                Puedes incorporar nuevos alumnos registrados o quitar alumnos de esta sección:
+              </p>
+
+              <!-- Lista de alumnos inscritos en forma de tags -->
+              <div id="section-students-roster" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;"></div>
+
+              <!-- Selector para añadir nuevos alumnos -->
+              <div style="display: flex; gap: 0.5rem; align-items: center; max-width: 480px; flex-wrap: wrap;">
+                <select id="select-add-student-to-section" class="form-input" style="flex: 1; min-width: 200px;">
+                  <option value="">-- Añadir alumno registrado --</option>
+                </select>
+                <button type="button" id="btn-add-student-action" class="btn btn-secondary">
+                  Añadir Alumno
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lista de Tareas (To-Do List) -->
+          <div>
+            <h3 class="card-title" style="font-size: 1.15rem; margin-bottom: 1rem;">Tareas Asignadas</h3>
+            <div id="section-tasks-list" class="tasks-list"></div>
+
+            <div id="section-tasks-empty" class="empty-state hidden" style="text-align: center; padding: 2rem 1rem; background: rgba(255, 255, 255, 0.02); border-radius: var(--radius-md); border: 1px dashed var(--border-color);">
+              <span style="font-size: 2rem; display: block; margin-bottom: 0.5rem;">🎉</span>
+              <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem;">¡Estás al día!</h4>
+              <p class="text-muted" style="font-size: 0.85rem;">No hay tareas pendientes en esta sección.</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   </div>
 
@@ -473,6 +611,38 @@
         <button type="submit" id="btn-submit-login" class="btn btn-primary" style="width: 100%; padding: 0.8rem; margin-top: 0.5rem; font-weight: 600;">
           Ingresar al Sistema
         </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal para Crear Sección (Profesor) -->
+  <div id="modal-create-section" class="modal-overlay">
+    <div class="modal-content" style="max-width: 480px;">
+      <div style="text-align: center; margin-bottom: 1.25rem;">
+        <h2 style="font-size: 1.3rem; font-weight: 700;">Crear Nueva Sección</h2>
+        <p class="text-muted" style="font-size: 0.85rem;">Ingresa el nombre y selecciona los estudiantes para esta clase.</p>
+      </div>
+
+      <form id="form-create-section">
+        <div class="form-group">
+          <label class="form-label" for="create-section-name">Nombre de la Sección:</label>
+          <input type="text" id="create-section-name" class="form-input" placeholder="Ej. Lógica Simbólica - Sección A" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Seleccionar Estudiantes:</label>
+          <div id="create-section-students-container" class="students-checkbox-list" style="max-height: 180px; overflow-y: auto; background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
+            <!-- Casillas inyectadas dinámicamente -->
+          </div>
+          <span class="text-muted" style="font-size: 0.72rem; display: block; margin-top: 0.35rem;">
+            Solo se muestran estudiantes registrados en la base de datos local.
+          </span>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem;">
+          <button type="button" id="btn-cancel-create-section" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Crear Sección</button>
+        </div>
       </form>
     </div>
   </div>

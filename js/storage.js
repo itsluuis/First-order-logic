@@ -94,6 +94,28 @@ export class StorageService {
   }
 
   /**
+   * Elimina un usuario por su ID y realiza la limpieza de sus datos asociados
+   */
+  deleteUser(userId) {
+    const user = this.findUserById(userId);
+    if (!user) return { success: false, message: 'Usuario no encontrado.' };
+
+    const users = this.getUsers().filter(u => u.id !== userId);
+    this.saveUsers(users);
+
+    // Limpiar perfil ML si era estudiante
+    if (user.role === 'estudiante') {
+      try {
+        localStorage.removeItem(`logica_student_ml_profile_${userId}`);
+      } catch (e) {
+        console.warn('Error al limpiar perfil ML de estudiante:', e);
+      }
+    }
+
+    return { success: true, deletedUser: user };
+  }
+
+  /**
    * Valida estrictamente que un PIN contenga exactamente 3 dígitos numéricos
    */
   isValidStudentPin(pin) {
