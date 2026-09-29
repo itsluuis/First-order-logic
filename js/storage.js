@@ -6,7 +6,8 @@
 
 const DB_KEYS = {
   SESSION: 'logica_db_session',
-  SETTINGS: 'logica_db_settings'
+  SETTINGS: 'logica_db_settings',
+  USERS: 'logica_db_users'
 };
 
 export const PROFILES = {
@@ -23,7 +24,7 @@ export const PROFILES = {
     id: 'profesor',
     name: 'Profesor',
     role: 'profesor',
-    requiresPassword: false,
+    requiresPassword: true,
     icon: 'teacher',
     description: 'Uso de herramientas lógicas, constructor visual y tablas de verdad.'
   },
@@ -31,7 +32,7 @@ export const PROFILES = {
     id: 'estudiante',
     name: 'Estudiante',
     role: 'estudiante',
-    requiresPassword: false,
+    requiresPassword: true,
     icon: 'student',
     description: 'Práctica con proposiciones moleculares, FBF y análisis sintáctico.'
   }
@@ -51,32 +52,191 @@ export class StorageService {
     if (!localStorage.getItem(DB_KEYS.SETTINGS)) {
       localStorage.setItem(DB_KEYS.SETTINGS, JSON.stringify(DEFAULT_SETTINGS));
     }
+    if (!localStorage.getItem(DB_KEYS.USERS)) {
+      localStorage.setItem(DB_KEYS.USERS, JSON.stringify([]));
+    }
   }
 
-  // --- AUTENTICACIÓN SIMPLIFICADA POR PERFIL ---
-  login(profileId, password = '') {
-    const profile = Object.values(PROFILES).find(p => p.id === profileId);
-    if (!profile) {
-      return { success: false, message: 'Perfil no reconocido.' };
+  // --- GESTIÓN DE USUARIOS LOCALES ---
+  getUsers() {
+    try {
+      const data = localStorage.getItem(DB_KEYS.USERS);
+      return data ? JSON.parse(data) : [];
+    } catch (e) {
+      console.error('Error al leer usuarios de localStorage:', e);
+      return [];
+    }
+  }
+
+  saveUsers(users) {
+    try {
+      localStorage.setItem(DB_KEYS.USERS, JSON.stringify(users));
+      return true;
+    } catch (e) {
+      console.error('Error al guardar usuarios en localStorage:', e);
+      return false;
+    }
+  }
+
+  normalizeUsername(username) {
+    return (username || '').trim().toLowerCase();
+  }
+
+  findUser(role, username) {
+    const normalized = this.normalizeUsername(username);
+    const users = this.getUsers();
+    return users.find(u => u.role === role && u.normalizedUsername === normalized);
+  }
+
+  findUserById(userId) {
+    const users = this.getUsers();
+    return users.find(u => u.id === userId);
+  }
+
+  /**
+   * Valida estrictamente que un PIN contenga exactamente 3 dígitos numéricos
+   */
+  isValidStudentPin(pin) {
+    return /^\d{3}$/.test(String(pin || '').trim());
+  }
+
+  /**
+   * Registra un nuevo usuario en la base de datos local
+   */
+  registerUser({ username, role, pin = '', password = '' }) {
+    const cleanUsername = (username || '').trim();
+    if (!cleanUsername || cleanUsername.length < 2) {
+      return { success: false, message: 'El nombre debe tener al menos 2 caracteres.' };
     }
 
-    // Si es administrador, validar contraseña obligatoriamente
-    if (profile.requiresPassword) {
-      if (password !== profile.password) {
+    if (role !== 'estudiante' && role !== 'profesor') {
+      return { success: false, message: 'Rol de usuario inválido para registro.' };
+    }
+
+    // Verificar si ya existe un usuario con el mismo nombre y rol
+    const existing = this.findUser(role, cleanUsername);
+    if (existing) {
+      return {
+        success: false,
+        message: `El usuario "${cleanUsername}" ya está registrado como ${role}. Por favor inicia sesión o usa otro nombre.`
+      };
+    }
+
+    // Validaciones según rol
+    if (role === 'estudiante') {
+      const cleanPin = String(pin || '').trim();
+      if (!this.isValidStudentPin(cleanPin)) {
+        return {
+          success: false,
+          message: 'La contraseña de estudiante debe ser un PIN de exactamente 3 dígitos numéricos (ej. 123).'
+        };
+      }
+    } else if (role === 'profesor') {
+      if (!password || password.length < 4) {
+        return {
+          success: false,
+          message: 'La contraseña del profesor debe tener al menos 4 caracteres.'
+        };
+      }
+    }
+
+    const newUser = {
+      id: `${role === 'estudiante' ? 'est' : 'prof'}_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 6)}`,
+      username: cleanUsername,
+      normalizedUsername: this.normalizeUsername(cleanUsername),
+      role,
+      pin: role === 'estudiante' ? String(pin).trim() : undefined,
+      password: role === 'profesor' ? password : undefined,
+      createdAt: new Date().toISOString(),
+      sectionId: null, // Preparado para el futuro sistema de secciones
+      createdSections: role === 'profesor' ? [] : undefined
+    };
+
+    const users = this.getUsers();
+    users.push(newUser);
+    this.saveUsers(users);
+
+    // Auto login al registrarse exitosamente
+    const session = {
+      userId: newUser.id,
+      username: newUser.username,
+      role: newUser.role,
+      icon: newUser.role === 'profesor' ? 'teacher' : 'student',
+      sectionId: newUser.sectionId,
+      loginTime: new Date().toISOString()
+    };
+    localStorage.setItem(DB_KEYS.SESSION, JSON.stringify(session));
+
+    return { success: true, user: newUser, session };
+  }
+
+  /**
+   * Autenticación multiusuario (Admin, Estudiante con PIN 3 dígitos, Profesor)
+   */
+  loginUser(role, username, credential = '') {
+    // 1. Acceso de Administrador
+    if (role === 'admin') {
+      if (credential !== PROFILES.ADMIN.password) {
         return { success: false, message: 'Contraseña incorrecta para el perfil de Administrador.' };
+      }
+      const adminSession = {
+        userId: 'admin_root',
+        username: 'Administrador',
+        role: 'admin',
+        icon: 'shield',
+        loginTime: new Date().toISOString()
+      };
+      localStorage.setItem(DB_KEYS.SESSION, JSON.stringify(adminSession));
+      return { success: true, session: adminSession };
+    }
+
+    // 2. Acceso de Estudiante o Profesor
+    const cleanUsername = (username || '').trim();
+    if (!cleanUsername) {
+      return { success: false, message: 'Por favor ingresa tu nombre de usuario.' };
+    }
+
+    const user = this.findUser(role, cleanUsername);
+    if (!user) {
+      return {
+        success: false,
+        message: `No se encontró al ${role === 'profesor' ? 'profesor' : 'estudiante'} "${cleanUsername}". Verifica el nombre o crea una cuenta en "Registrarse".`
+      };
+    }
+
+    if (role === 'estudiante') {
+      const cleanPin = String(credential || '').trim();
+      if (!this.isValidStudentPin(cleanPin)) {
+        return { success: false, message: 'El PIN de estudiante debe tener exactamente 3 dígitos numéricos.' };
+      }
+      if (user.pin !== cleanPin) {
+        return { success: false, message: 'PIN de 3 dígitos incorrecto.' };
+      }
+    } else if (role === 'profesor') {
+      if (user.password !== credential) {
+        return { success: false, message: 'Contraseña de profesor incorrecta.' };
       }
     }
 
     const session = {
-      profileId: profile.id,
-      username: profile.name,
-      role: profile.role,
-      icon: profile.icon,
+      userId: user.id,
+      username: user.username,
+      role: user.role,
+      icon: user.role === 'profesor' ? 'teacher' : 'student',
+      sectionId: user.sectionId || null,
       loginTime: new Date().toISOString()
     };
 
     localStorage.setItem(DB_KEYS.SESSION, JSON.stringify(session));
     return { success: true, session };
+  }
+
+  // Compatibilidad hacia atrás con llamada anterior
+  login(profileId, password = '') {
+    if (profileId === 'admin') {
+      return this.loginUser('admin', 'Administrador', password);
+    }
+    return { success: false, message: 'Usa loginUser(role, username, credential) para estudiante o profesor.' };
   }
 
   getCurrentSession() {
@@ -116,3 +276,4 @@ export class StorageService {
 }
 
 export const dbService = new StorageService();
+

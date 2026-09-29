@@ -20,6 +20,7 @@ import { ICONS } from './icons.js';
 const AppState = {
   currentUser: null,
   selectedProfileId: 'estudiante',
+  authMode: 'login',
   currentNotation: NOTATION_MODES.STANDARD,
   theme: 'dark',
   activeTab: 'tab-builder',
@@ -126,56 +127,155 @@ function initNotationEvents() {
 }
 
 // =============================================================================
-// GESTIÓN DE AUTENTICACIÓN SIMPLIFICADA (ADMIN, PROFESOR, ESTUDIANTE)
+// =============================================================================
+// GESTIÓN DE AUTENTICACIÓN MULTIUSUARIO LOCAL (ADMIN, PROFESOR, ESTUDIANTE)
 // =============================================================================
 function initAuth() {
   const authModal = document.getElementById('auth-modal');
-  const session = dbService.getCurrentSession();
+  AppState.authMode = 'login'; // 'login' | 'register'
 
+  const session = dbService.getCurrentSession();
   if (session) {
     loginSuccess(session);
   } else {
     openAuthModal();
   }
 
-  // Selección de tarjetas de perfil
+  // Selección de tarjetas de perfil (Estudiante, Profesor, Administrador)
   const profileCards = document.querySelectorAll('.profile-card');
   profileCards.forEach(card => {
     card.addEventListener('click', () => {
       profileCards.forEach(c => c.classList.remove('active'));
       card.classList.add('active');
       AppState.selectedProfileId = card.getAttribute('data-profile-id');
+      hideAuthAlert();
       updateProfileFormUI();
     });
   });
 
-  // Formulario de login
+  // Conmutador de modo (Iniciar Sesión / Registrarse)
+  const modeTabs = document.querySelectorAll('.auth-mode-tab');
+  modeTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      modeTabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      AppState.authMode = tab.getAttribute('data-mode') || 'login';
+      hideAuthAlert();
+      updateProfileFormUI();
+    });
+  });
+
+  // Envío del formulario de autenticación
   document.getElementById('form-login')?.addEventListener('submit', (e) => {
     e.preventDefault();
-    const profileId = AppState.selectedProfileId;
-    const passwordInput = document.getElementById('login-password');
-    const password = passwordInput ? passwordInput.value : '';
+    hideAuthAlert();
 
-    const res = dbService.login(profileId, password);
+    const role = AppState.selectedProfileId;
+    const mode = AppState.authMode;
+
+    // Caso 1: Administrador
+    if (role === 'admin') {
+      const passwordInput = document.getElementById('login-password');
+      const password = passwordInput ? passwordInput.value : '';
+      const res = dbService.loginUser('admin', 'Administrador', password);
+
+      if (res.success) {
+        showToast('¡Bienvenido, Administrador!', 'success');
+        loginSuccess(res.session);
+        if (passwordInput) passwordInput.value = '';
+      } else {
+        showAuthAlert(res.message, 'error');
+        showToast(res.message, 'error');
+      }
+      return;
+    }
+
+    // Caso 2: Estudiante o Profesor
+    const usernameInput = document.getElementById('auth-username');
+    const credentialInput = document.getElementById('auth-credential');
+    const confirmInput = document.getElementById('auth-confirm-credential');
+
+    const username = usernameInput ? usernameInput.value.trim() : '';
+    const credential = credentialInput ? credentialInput.value.trim() : '';
+    const confirmVal = confirmInput ? confirmInput.value.trim() : '';
+
+    // Validaciones básicas de campos
+    if (!username) {
+      showAuthAlert('Por favor introduce tu nombre.', 'error');
+      usernameInput?.focus();
+      return;
+    }
+
+    if (!credential) {
+      const err = role === 'estudiante' ? 'Por favor introduce tu PIN de 3 dígitos.' : 'Por favor introduce tu contraseña.';
+      showAuthAlert(err, 'error');
+      credentialInput?.focus();
+      return;
+    }
+
+    // Validación estricta de 3 dígitos para el estudiante
+    if (role === 'estudiante') {
+      if (!/^\d{3}$/.test(credential)) {
+        showAuthAlert('El PIN de estudiante debe contener exactamente 3 dígitos numéricos (ej. 123).', 'error');
+        credentialInput?.focus();
+        return;
+      }
+    } else if (role === 'profesor' && mode === 'register') {
+      if (credential.length < 4) {
+        showAuthAlert('La contraseña del profesor debe tener al menos 4 caracteres.', 'error');
+        credentialInput?.focus();
+        return;
+      }
+    }
+
+    // MODO: REGISTRO
+    if (mode === 'register') {
+      if (credential !== confirmVal) {
+        showAuthAlert('Las contraseñas / PIN no coinciden. Por favor verifícalos.', 'error');
+        confirmInput?.focus();
+        return;
+      }
+
+      const res = dbService.registerUser({
+        username,
+        role,
+        pin: role === 'estudiante' ? credential : '',
+        password: role === 'profesor' ? credential : ''
+      });
+
+      if (res.success) {
+        showToast(`¡Cuenta creada con éxito! Bienvenido, ${res.session.username}.`, 'success');
+        loginSuccess(res.session);
+        resetAuthForm();
+      } else {
+        showAuthAlert(res.message, 'error');
+        showToast(res.message, 'error');
+      }
+      return;
+    }
+
+    // MODO: INICIAR SESIÓN
+    const res = dbService.loginUser(role, username, credential);
     if (res.success) {
-      showToast(`¡Bienvenido, ${res.session.username}!`, 'success');
+      showToast(`¡Bienvenido de vuelta, ${res.session.username}!`, 'success');
       loginSuccess(res.session);
-      authModal.classList.remove('active');
-      if (passwordInput) passwordInput.value = '';
+      resetAuthForm();
     } else {
+      showAuthAlert(res.message, 'error');
       showToast(res.message, 'error');
     }
   });
 
-  // Botón de Cerrar Sesión (con corrección para resetear a Constructor Visual)
+  // Botón de Cerrar Sesión
   document.getElementById('btn-logout')?.addEventListener('click', () => {
     dbService.logout();
     AppState.currentUser = null;
 
-    // SOLUCIÓN AL BUG REPORTADO: Al cerrar sesión, automáticamente cambiar al constructor visual
-    switchTab('tab-builder');
+    // Recargar modelo neuronal para limpiar memoria de la sesión anterior
+    studentModel.reloadForCurrentUser();
 
-    // Ocultar pestaña de administración de inmediato
+    // Resetear a pestaña principal (Constructor Visual)
+    switchTab('tab-builder');
     document.getElementById('tab-nav-admin')?.classList.add('hidden');
 
     showToast('Has cerrado sesión correctamente.', 'info');
@@ -186,30 +286,141 @@ function initAuth() {
 function openAuthModal() {
   const authModal = document.getElementById('auth-modal');
   authModal?.classList.add('active');
+  hideAuthAlert();
   updateProfileFormUI();
+}
+
+function showAuthAlert(msg, type = 'error') {
+  const alertEl = document.getElementById('auth-alert');
+  if (!alertEl) return;
+  alertEl.textContent = msg;
+  alertEl.className = `auth-alert auth-alert-${type}`;
+  alertEl.classList.remove('hidden');
+}
+
+function hideAuthAlert() {
+  const alertEl = document.getElementById('auth-alert');
+  if (alertEl) {
+    alertEl.textContent = '';
+    alertEl.className = 'auth-alert hidden';
+  }
+}
+
+function resetAuthForm() {
+  const uInput = document.getElementById('auth-username');
+  const cInput = document.getElementById('auth-credential');
+  const cfInput = document.getElementById('auth-confirm-credential');
+  const pInput = document.getElementById('login-password');
+  if (uInput) uInput.value = '';
+  if (cInput) cInput.value = '';
+  if (cfInput) cfInput.value = '';
+  if (pInput) pInput.value = '';
+  hideAuthAlert();
 }
 
 function updateProfileFormUI() {
   const profileId = AppState.selectedProfileId;
-  const passGroup = document.getElementById('admin-password-group');
-  const passInput = document.getElementById('login-password');
+  const mode = AppState.authMode || 'login';
+
+  const modeTabs = document.getElementById('auth-mode-tabs');
+  const userFields = document.getElementById('user-fields-group');
+  const adminFields = document.getElementById('admin-password-group');
+  const confirmGroup = document.getElementById('auth-confirm-group');
   const submitBtn = document.getElementById('btn-submit-login');
+
+  const usernameLabel = document.getElementById('auth-username-label');
+  const usernameInput = document.getElementById('auth-username');
+  const credentialLabel = document.getElementById('auth-credential-label');
+  const credentialInput = document.getElementById('auth-credential');
+  const credentialHint = document.getElementById('auth-credential-hint');
+  const confirmLabel = document.getElementById('auth-confirm-label');
+  const confirmInput = document.getElementById('auth-confirm-credential');
 
   const profile = Object.values(PROFILES).find(p => p.id === profileId);
   const profileName = profile ? profile.name : 'Usuario';
 
+  // Si es Administrador
   if (profileId === 'admin') {
-    passGroup?.classList.remove('hidden');
-    if (passInput) {
-      passInput.required = true;
-      passInput.focus();
+    modeTabs?.classList.add('hidden');
+    userFields?.classList.add('hidden');
+    adminFields?.classList.remove('hidden');
+
+    const adminPass = document.getElementById('login-password');
+    if (adminPass) {
+      adminPass.required = true;
+      adminPass.focus();
     }
-    if (submitBtn) submitBtn.textContent = `Ingresar al Sistema como ${profileName}`;
+    if (submitBtn) submitBtn.textContent = 'Ingresar como Administrador';
+    return;
+  }
+
+  // Si es Estudiante o Profesor
+  modeTabs?.classList.remove('hidden');
+  userFields?.classList.remove('hidden');
+  adminFields?.classList.add('hidden');
+
+  // Ajustes según Estudiante vs Profesor
+  if (profileId === 'estudiante') {
+    if (usernameLabel) usernameLabel.textContent = 'Nombre del Estudiante:';
+    if (usernameInput) usernameInput.placeholder = 'Introduce tu nombre (ej. Lucas)';
+
+    if (credentialLabel) credentialLabel.textContent = 'PIN de 3 Dígitos:';
+    if (credentialInput) {
+      credentialInput.type = 'password';
+      credentialInput.inputMode = 'numeric';
+      credentialInput.maxLength = 3;
+      credentialInput.className = 'form-input pin-input';
+      credentialInput.placeholder = '● ● ●';
+    }
+    if (credentialHint) {
+      credentialHint.textContent = 'La contraseña debe contener exactamente 3 dígitos numéricos.';
+      credentialHint.classList.remove('hidden');
+    }
+    if (confirmLabel) confirmLabel.textContent = 'Confirmar PIN de 3 Dígitos:';
+    if (confirmInput) {
+      confirmInput.type = 'password';
+      confirmInput.inputMode = 'numeric';
+      confirmInput.maxLength = 3;
+      confirmInput.className = 'form-input pin-input';
+      confirmInput.placeholder = '● ● ●';
+    }
   } else {
-    passGroup?.classList.add('hidden');
-    if (passInput) {
-      passInput.required = false;
-      passInput.value = '';
+    // Profesor
+    if (usernameLabel) usernameLabel.textContent = 'Nombre del Profesor:';
+    if (usernameInput) usernameInput.placeholder = 'Introduce tu nombre (ej. Prof. García)';
+
+    if (credentialLabel) credentialLabel.textContent = 'Contraseña:';
+    if (credentialInput) {
+      credentialInput.type = 'password';
+      credentialInput.inputMode = 'text';
+      credentialInput.maxLength = 50;
+      credentialInput.className = 'form-input';
+      credentialInput.placeholder = 'Introduce tu contraseña';
+    }
+    if (credentialHint) {
+      credentialHint.textContent = 'Mínimo 4 caracteres.';
+      credentialHint.classList.remove('hidden');
+    }
+    if (confirmLabel) confirmLabel.textContent = 'Confirmar Contraseña:';
+    if (confirmInput) {
+      confirmInput.type = 'password';
+      confirmInput.inputMode = 'text';
+      confirmInput.maxLength = 50;
+      confirmInput.className = 'form-input';
+      confirmInput.placeholder = 'Repite tu contraseña';
+    }
+  }
+
+  // Ajustes según Modo (Iniciar Sesión vs Registrarse)
+  if (mode === 'register') {
+    confirmGroup?.classList.remove('hidden');
+    if (confirmInput) confirmInput.required = true;
+    if (submitBtn) submitBtn.textContent = `Crear Cuenta e Ingresar como ${profileName}`;
+  } else {
+    confirmGroup?.classList.add('hidden');
+    if (confirmInput) {
+      confirmInput.required = false;
+      confirmInput.value = '';
     }
     if (submitBtn) submitBtn.textContent = `Ingresar al Sistema como ${profileName}`;
   }
@@ -219,12 +430,15 @@ function loginSuccess(session) {
   AppState.currentUser = session;
   document.getElementById('auth-modal')?.classList.remove('active');
 
+  // Recargar el modelo neuronal de IA con las métricas personales del estudiante activo
+  studentModel.reloadForCurrentUser();
+
   // Actualizar Header
   document.getElementById('current-username').textContent = session.username;
   const roleBadge = document.getElementById('current-user-role');
   const avatar = document.getElementById('current-user-avatar');
 
-  avatar.innerHTML = ICONS[session.icon] || ICONS.user;
+  if (avatar) avatar.innerHTML = ICONS[session.icon] || ICONS.user;
 
   if (session.role === 'admin') {
     roleBadge.textContent = 'ADMINISTRADOR';

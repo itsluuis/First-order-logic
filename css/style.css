@@ -677,6 +677,72 @@ body {
   line-height: 1.3;
 }
 
+/* Sub-pestañas de Autenticación (Iniciar Sesión / Registrarse) */
+.auth-mode-tabs {
+  display: flex;
+  background: rgba(15, 23, 42, 0.7);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--border-color);
+  gap: 4px;
+}
+
+.auth-mode-tab {
+  flex: 1;
+  padding: 0.6rem 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: calc(var(--radius-md) - 2px);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: center;
+}
+
+.auth-mode-tab:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.auth-mode-tab.active {
+  background: var(--accent-cyan);
+  color: #0b1120;
+  box-shadow: 0 2px 8px rgba(56, 189, 248, 0.35);
+}
+
+.pin-input {
+  letter-spacing: 0.35em;
+  font-size: 1.15rem;
+  text-align: center;
+  font-weight: 700;
+}
+
+.auth-alert {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.auth-alert-error {
+  background: rgba(225, 29, 72, 0.15);
+  border: 1px solid var(--accent-rose);
+  color: #fecdd3;
+}
+
+.auth-alert-info {
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid var(--accent-cyan);
+  color: #e0f2fe;
+}
+
 /* Tabla de Verdad */
 .table-responsive {
   width: 100%;

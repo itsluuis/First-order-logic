@@ -7,8 +7,21 @@
  */
 
 import { NeuralNetwork } from './neuralNet.js';
+import { dbService } from '../storage.js';
 
-const STORAGE_KEY = 'logica_student_ml_profile';
+const BASE_STORAGE_KEY = 'logica_student_ml_profile';
+
+function getStorageKey() {
+  try {
+    const session = dbService.getCurrentSession();
+    if (session && session.userId && session.role === 'estudiante') {
+      return `${BASE_STORAGE_KEY}_${session.userId}`;
+    }
+  } catch (e) {
+    // fallback a clave base si ocurre algún error
+  }
+  return BASE_STORAGE_KEY;
+}
 
 export class StudentModel {
   constructor() {
@@ -25,11 +38,20 @@ export class StudentModel {
   }
 
   /**
-   * Carga o inicializa el perfil histórico del estudiante
+   * Recarga el perfil y la red neuronal cuando cambia el usuario activo
+   */
+  reloadForCurrentUser() {
+    this.profile = this._loadProfile();
+    this._ensureBaseTraining();
+  }
+
+  /**
+   * Carga o inicializa el perfil histórico del estudiante activo
    */
   _loadProfile() {
+    const key = getStorageKey();
     try {
-      const data = localStorage.getItem(STORAGE_KEY);
+      const data = localStorage.getItem(key);
       if (data) {
         const parsed = JSON.parse(data);
         if (parsed.netWeights) {
@@ -63,12 +85,13 @@ export class StudentModel {
   }
 
   /**
-   * Guarda el perfil y los pesos de la red en localStorage
+   * Guarda el perfil y los pesos de la red en localStorage para el estudiante actual
    */
   save() {
+    const key = getStorageKey();
     try {
       this.profile.netWeights = this.network.toJSON();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.profile));
+      localStorage.setItem(key, JSON.stringify(this.profile));
     } catch (e) {
       console.error('Error guardando perfil ML:', e);
     }

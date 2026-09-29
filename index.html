@@ -394,14 +394,14 @@
   </div>
 
   <!-- =========================================================================
-       MODAL DE AUTENTICACIÓN SIMPLIFICADO (3 PERFILES: ADMIN, PROFESOR, ESTUDIANTE)
+       MODAL DE AUTENTICACIÓN MULTIUSUARIO OFFLINE (ADMIN, PROFESOR, ESTUDIANTE)
        ========================================================================= -->
   <div id="auth-modal" class="modal-overlay">
     <div class="modal-content">
-      <div style="text-align: center; margin-bottom: 1.5rem;">
+      <div style="text-align: center; margin-bottom: 1.25rem;">
         <div class="brand-icon" style="margin: 0 auto 0.75rem auto;">∧∨</div>
-        <h2 style="font-size: 1.4rem; font-weight: 700;">Selección de Perfil</h2>
-        <p class="text-muted" style="font-size: 0.85rem;">Software de Lógica Simbólica</p>
+        <h2 style="font-size: 1.4rem; font-weight: 700;">Acceso al Sistema</h2>
+        <p class="text-muted" style="font-size: 0.85rem;">Software de Lógica Simbólica &bull; 100% Offline</p>
       </div>
 
       <!-- Selector visual de 3 perfiles -->
@@ -423,18 +423,55 @@
         </div>
       </div>
 
+      <!-- Pestañas de modo (Iniciar Sesión vs Registrarse) - Visibles para Estudiante y Profesor -->
+      <div id="auth-mode-tabs" class="auth-mode-tabs">
+        <button type="button" class="auth-mode-tab active" data-mode="login">
+          Iniciar Sesión
+        </button>
+        <button type="button" class="auth-mode-tab" data-mode="register">
+          Registrarse
+        </button>
+      </div>
+
       <form id="form-login">
-        <!-- Campo de contraseña: Solo requerido y visible si se selecciona Administrador -->
+        <!-- Feedback de error o estado -->
+        <div id="auth-alert" class="auth-alert hidden"></div>
+
+        <!-- Campos de Usuario (Estudiante o Profesor) -->
+        <div id="user-fields-group">
+          <div class="form-group" id="auth-username-group">
+            <label id="auth-username-label" class="form-label" for="auth-username">Nombre del Estudiante:</label>
+            <input type="text" id="auth-username" class="form-input" placeholder="Introduce tu nombre (ej. Lucas)" autocomplete="username" spellcheck="false">
+          </div>
+
+          <div class="form-group" id="auth-credential-group">
+            <label id="auth-credential-label" class="form-label" for="auth-credential">PIN de 3 Dígitos:</label>
+            <input type="password" id="auth-credential" class="form-input pin-input" placeholder="● ● ●" maxlength="3" inputmode="numeric" autocomplete="current-password">
+            <span id="auth-credential-hint" class="text-muted" style="font-size: 0.75rem; display: block; margin-top: 0.3rem;">
+              La contraseña debe contener exactamente 3 dígitos numéricos.
+            </span>
+          </div>
+
+          <div class="form-group hidden" id="auth-confirm-group">
+            <label id="auth-confirm-label" class="form-label" for="auth-confirm-credential">Confirmar PIN de 3 Dígitos:</label>
+            <input type="password" id="auth-confirm-credential" class="form-input pin-input" placeholder="● ● ●" maxlength="3" inputmode="numeric" autocomplete="new-password">
+            <span class="text-muted" style="font-size: 0.75rem; display: block; margin-top: 0.3rem;">
+              Repite el PIN para evitar equivocaciones.
+            </span>
+          </div>
+        </div>
+
+        <!-- Campo de contraseña de Administrador (Solo cuando se selecciona Administrador) -->
         <div id="admin-password-group" class="form-group hidden">
-          <label class="form-label">Contraseña de Administrador:</label>
+          <label class="form-label" for="login-password">Contraseña de Administrador:</label>
           <input type="password" id="login-password" class="form-input" autocomplete="current-password" placeholder="Introduce la contraseña (1234)">
           <span class="text-muted" style="font-size: 0.75rem; display: block; margin-top: 0.3rem;">
             La contraseña inicial es <strong>1234</strong>.
           </span>
         </div>
 
-        <button type="submit" id="btn-submit-login" class="btn btn-primary" style="width: 100%; padding: 0.75rem;">
-          Ingresar al Sistema como Estudiante
+        <button type="submit" id="btn-submit-login" class="btn btn-primary" style="width: 100%; padding: 0.8rem; margin-top: 0.5rem; font-weight: 600;">
+          Ingresar al Sistema
         </button>
       </form>
     </div>
