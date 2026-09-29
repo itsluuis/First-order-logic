@@ -89,7 +89,7 @@ proposiciones moleculares/
 ├── js/
 │   ├── app.js                   # Controlador principal, navegación segura y coordinación
 │   ├── icons.js                 # Biblioteca de iconos vectoriales SVG
-│   ├── storage.js               # Capa de persistencia local y perfiles de usuario
+│   ├── storage.js               # Capa de persistencia local, base de datos de usuarios y perfiles
 │   ├── logic/
 │   │   ├── ast.js               # Tokenizador, parser formal y árbol sintáctico (AST)
 │   │   ├── generators.js        # Generadores deterministas de fórmulas y atómicas
@@ -105,7 +105,98 @@ proposiciones moleculares/
 │       ├── practiceEngine.js    # Motor lógico de los 4 minijuegos, cooldowns y anti-spam
 │       └── practiceView.js      # Renderizado de arenas de juego, lobby y resumen
 └── docs/
+    ├── SPEC_AUTH_LOCAL_DB.md    # Especificación de base de datos local y login offline
     └── SPEC_PRACTICAS_Y_ML.md   # Especificación técnica detallada del sistema
+```
+
+### Diagrama de Flujo del Sistema (Workflows & Architecture)
+
+```mermaid
+flowchart TD
+
+subgraph group_app["Application workflows"]
+  node_controller["App controller<br/>[app.js]"]
+  node_builder["Visual builder<br/>[app.js]"]
+  node_inverse["Inverse workflow<br/>[app.js]"]
+end
+
+subgraph group_logic["Logic tools"]
+  node_parser["FBF parser and AST<br/>[ast.js]"]
+  node_generators["Random generators<br/>[generators.js]"]
+  node_language["Natural-language mapping<br/>[naturalLanguage.js]"]
+  node_truth["Truth-table engine<br/>[truthTable.js]"]
+end
+
+subgraph group_practice["Practice and learning"]
+  node_practice_view["Practice interface<br/>[practiceView.js]"]
+  node_practice_engine["Four-game engine<br/>[practiceEngine.js]"]
+  node_student_model["Student learning model<br/>[studentModel.js]"]
+  node_neural_net["Neural network<br/>[neuralNet.js]"]
+end
+
+subgraph group_moli["Moli tutor"]
+  node_mascot_controller["Moli controller"]
+  node_mascot_view["Moli OLED view<br/>[mascotView.js]"]
+end
+
+subgraph group_state["Local state"]
+  node_profiles[("Profiles and settings<br/>[storage.js]")]
+end
+
+node_student(("Student"))
+
+node_student -->|"uses app"| node_controller
+node_controller -->|"reads and writes"| node_profiles
+node_controller -->|"routes to"| node_builder
+node_controller -->|"routes to"| node_inverse
+node_controller -->|"requests evaluation"| node_truth
+node_controller -->|"initializes"| node_practice_view
+node_controller -->|"initializes"| node_practice_engine
+node_controller -->|"initializes"| node_mascot_controller
+node_builder -->|"generates formulas"| node_generators
+node_builder -->|"translates proposition"| node_language
+node_builder -->|"formats FBF"| node_parser
+node_inverse -->|"parses FBF"| node_parser
+node_inverse -->|"generates FBF"| node_generators
+node_inverse -->|"reconstructs proposition"| node_language
+node_truth -->|"reads AST"| node_parser
+node_practice_engine -->|"parses and formats"| node_parser
+node_practice_engine -->|"evaluates formulas"| node_truth
+node_practice_engine -.->|"reports performance"| node_student_model
+node_student_model -->|"trains and predicts"| node_neural_net
+node_student_model -->|"persists profile"| node_profiles
+node_mascot_controller -->|"updates display"| node_mascot_view
+node_mascot_controller -->|"requests diagnosis"| node_student_model
+node_mascot_controller -->|"reads app context"| node_controller
+node_student -->|"plays games"| node_practice_view
+
+click node_controller "https://github.com/itsluuis/first-order-logic/blob/main/js/app.js"
+click node_profiles "https://github.com/itsluuis/first-order-logic/blob/main/js/storage.js"
+click node_builder "https://github.com/itsluuis/first-order-logic/blob/main/js/app.js"
+click node_inverse "https://github.com/itsluuis/first-order-logic/blob/main/js/app.js"
+click node_parser "https://github.com/itsluuis/first-order-logic/blob/main/js/logic/ast.js"
+click node_generators "https://github.com/itsluuis/first-order-logic/blob/main/js/logic/generators.js"
+click node_language "https://github.com/itsluuis/first-order-logic/blob/main/js/logic/naturalLanguage.js"
+click node_truth "https://github.com/itsluuis/first-order-logic/blob/main/js/logic/truthTable.js"
+click node_practice_view "https://github.com/itsluuis/first-order-logic/blob/main/js/practice/practiceView.js"
+click node_practice_engine "https://github.com/itsluuis/first-order-logic/blob/main/js/practice/practiceEngine.js"
+click node_student_model "https://github.com/itsluuis/first-order-logic/blob/main/js/ml/studentModel.js"
+click node_neural_net "https://github.com/itsluuis/first-order-logic/blob/main/js/ml/neuralNet.js"
+click node_mascot_controller "https://github.com/itsluuis/first-order-logic/blob/main/js/mascot/mascotController.js"
+click node_mascot_view "https://github.com/itsluuis/first-order-logic/blob/main/js/mascot/mascotView.js"
+
+classDef toneNeutral fill:#f8fafc,stroke:#334155,stroke-width:1.5px,color:#0f172a
+classDef toneBlue fill:#dbeafe,stroke:#2563eb,stroke-width:1.5px,color:#172554
+classDef toneAmber fill:#fef3c7,stroke:#d97706,stroke-width:1.5px,color:#78350f
+classDef toneMint fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#14532d
+classDef toneRose fill:#ffe4e6,stroke:#e11d48,stroke-width:1.5px,color:#881337
+classDef toneIndigo fill:#e0e7ff,stroke:#4f46e5,stroke-width:1.5px,color:#312e81
+classDef toneTeal fill:#ccfbf1,stroke:#0f766e,stroke-width:1.5px,color:#134e4a
+class node_controller,node_builder,node_inverse toneBlue
+class node_parser,node_generators,node_language,node_truth toneAmber
+class node_practice_view,node_practice_engine,node_student_model,node_neural_net toneMint
+class node_mascot_controller,node_mascot_view toneRose
+class node_profiles,node_student toneIndigo
 ```
 
 ---
@@ -128,13 +219,15 @@ Luego navega a `http://localhost:8080` en tu explorador.
 
 ---
 
-## Credenciales de Acceso
+## Credenciales y Autenticación Multiusuario Local (Offline)
 
-| Perfil | Contraseña | Privilegios |
+El sistema cuenta con una base de datos local embebida en el navegador (100% funcional sin conexión a internet) para registro e inicio de sesión:
+
+| Perfil | Autenticación | Privilegios y Características |
 | :--- | :--- | :--- |
-| **Estudiante** | *(No requerida)* | Constructor visual, proceso inverso, tablas de verdad, centro de prácticas y duelos contra Moli. |
-| **Profesor** | *(No requerida)* | Todas las herramientas pedagógicas y analíticas del estudiante. |
-| **Administrador** | `1234` | Todo lo anterior más acceso exclusivo a la pestaña de **Parámetros** para fijar políticas de notación. |
+| **Estudiante** | Nombre + **PIN de 3 dígitos** (ej. `123`) | Constructor visual, proceso inverso, tablas de verdad, centro de prácticas y duelos contra Moli con aislamiento estricto de estadísticas y modelo neuronal de IA. |
+| **Profesor** | Nombre + **Contraseña** (&ge; 4 caracteres) | Todas las herramientas pedagógicas y analíticas del estudiante, preparado para gestionar secciones futuras. |
+| **Administrador** | Contraseña fija (`1234`) | Acceso a herramientas lógicas y exclusivo a la pestaña de **Parámetros** para fijar políticas globales de notación. |
 
 ---
 
