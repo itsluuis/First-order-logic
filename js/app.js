@@ -45,23 +45,8 @@ const AppState = {
 // UTILIDADES: NOTIFICACIONES TOAST
 // =============================================================================
 function showToast(message, type = 'info') {
-  const container = document.getElementById('toast-container');
-  if (!container) return;
-
-  const toast = document.createElement('div');
-  toast.className = `toast toast-${type}`;
-
-  const iconSvg = type === 'success' ? ICONS.check : type === 'error' ? ICONS.alert : ICONS.info;
-  toast.innerHTML = `<span style="display:inline-flex;align-items:center;">${iconSvg}</span> <span>${message}</span>`;
-
-  container.appendChild(toast);
-
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(10px)';
-    toast.style.transition = 'all 0.3s ease';
-    setTimeout(() => toast.remove(), 300);
-  }, 4000);
+  // Notificaciones toast desactivadas permanentemente a solicitud del usuario
+  return;
 }
 
 // =============================================================================
