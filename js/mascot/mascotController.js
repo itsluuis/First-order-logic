@@ -175,6 +175,8 @@ export class MascotController {
 
   notifyGameStart(gameId, difficulty) {
     this.activeGameContext = { isPlaying: true, gameId, difficulty };
+    this.view.setGamePlaying(true);
+    this.view.hideSpeechBubble(true);
     if (gameId === 'duel') {
       this.view.setExpression('battle');
     } else {
@@ -187,6 +189,8 @@ export class MascotController {
 
   notifyGameExit() {
     this.activeGameContext = null;
+    this.view.setGamePlaying(false);
+    this.view.hideSpeechBubble(true);
     this.view.setExpression('idle');
 
     if (this.view.isBubbleOpen) {
@@ -196,6 +200,7 @@ export class MascotController {
 
   notifyGameOver(summary) {
     this.activeGameContext = null;
+    this.view.setGamePlaying(false);
 
     if (summary.score > 3 || summary.accuracy >= 75) {
       this.view.setExpression('happy');

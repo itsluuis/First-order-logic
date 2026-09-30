@@ -11,15 +11,29 @@ export class MascotView {
     this.currentExpression = 'idle';
     this.isBubbleOpen = false;
     this.isQuickRemark = false;
+    this.isGamePlaying = false;
+    this.lastElaborateActionTime = Date.now();
     this.idleTimer = null;
     this.activeIdleActionTimer = null;
     this.currentIdleRoutineId = 0;
     this.autoCloseTimer = null;
+    this.closeTransitionTimer = null;
     this.onMascotClick = null;
     this.onBubbleClose = null;
 
     this._initDOM();
     this._startIdleCycle();
+  }
+
+  /**
+   * Define si el usuario está realizando activamente un ejercicio o minijuego
+   */
+  setGamePlaying(isPlaying) {
+    this.isGamePlaying = Boolean(isPlaying);
+    if (this.isGamePlaying) {
+      this._cancelActiveIdleAction();
+      this.hideSpeechBubble(true);
+    }
   }
 
   _initDOM() {
@@ -318,6 +332,17 @@ export class MascotView {
       return;
     }
 
+    // MODO EJERCICIO / JUEGO ACTIVO:
+    // Para no distraer al estudiante, se suspenden completamente las animaciones
+    // llamativas y los comentarios. Únicamente se permite un pestañeo sutil cada 4 a 7 segundos.
+    if (this.isGamePlaying) {
+      if (this.currentExpression === 'idle' || this.currentExpression === 'battle') {
+        this._triggerBlink();
+      }
+      this._scheduleNextIdle(Math.random() * 3000 + 4000);
+      return;
+    }
+
     // Si la mascota está en una interacción pedagógica activa de juego, posponer
     const activeInteractions = ['battle', 'thinking', 'dizzy'];
     if (activeInteractions.includes(this.currentExpression)) {
@@ -331,21 +356,29 @@ export class MascotView {
     }
 
     const routineId = ++this.currentIdleRoutineId;
-    const rand = Math.random();
+    const now = Date.now();
+    const timeSinceLastAction = now - this.lastElaborateActionTime;
+    const canDoElaborateAction = timeSinceLastAction > 25000; // Al menos 25s entre animaciones llamativas
 
-    if (rand < 0.38) {
-      // Rutina 1: Parpadeo simple o doble
+    // La gran mayoría de las veces (78%) o si no ha pasado suficiente tiempo, hacer pestañeo natural
+    if (!canDoElaborateAction || Math.random() < 0.78) {
       this._triggerBlink();
-      if (Math.random() < 0.40) {
+      if (Math.random() < 0.35) {
         this.activeIdleActionTimer = setTimeout(() => {
           if (routineId === this.currentIdleRoutineId && this.currentExpression === 'idle') {
             this._triggerBlink();
           }
         }, 260);
       }
-      this._scheduleNextIdle(Math.random() * 2500 + 2400);
+      this._scheduleNextIdle(Math.random() * 3000 + 3800);
+      return;
+    }
 
-    } else if (rand < 0.62) {
+    // Acción elaborada ocasional (una cada 25-45 segundos de inactividad)
+    this.lastElaborateActionTime = now;
+    const rand = Math.random();
+
+    if (rand < 0.38) {
       // Rutina 2: Mirada a la izquierda, luego a la derecha, y regresar al centro
       this.setExpression('look-left');
 
@@ -357,14 +390,14 @@ export class MascotView {
           if (routineId !== this.currentIdleRoutineId) return;
           this.setExpression('idle');
           this._triggerBlink();
-          this._scheduleNextIdle(Math.random() * 3000 + 2600);
+          this._scheduleNextIdle(Math.random() * 3000 + 3500);
         }, 900);
       }, 900);
 
       // Fallback de seguridad en caso de desincronización
       this._scheduleNextIdle(4500);
 
-    } else if (rand < 0.83) {
+    } else if (rand < 0.74) {
       // Rutina 3: Cara escéptica de la foto (ceja alzada) y comentario curioso espontáneo
       this.setExpression('skeptical');
 
@@ -375,7 +408,7 @@ export class MascotView {
         'Observando atentamente...'
       ];
       const remark = skepticalRemarks[Math.floor(Math.random() * skepticalRemarks.length)];
-      this.sayQuickRemark(`<p style="margin: 0; font-weight: 700; font-size: 0.95rem; line-height: 1.35;">${remark}</p>`, 2100, {
+      this.sayQuickRemark(`<p style="margin: 0; font-weight: 700; font-size: 0.95rem; line-height: 1.35;">${remark}</p>`, 2400, {
         isCompact: true,
         keepExpression: true
       });
@@ -385,16 +418,16 @@ export class MascotView {
         this.hideSpeechBubble();
         this.setExpression('idle');
         this._triggerBlink();
-        this._scheduleNextIdle(Math.random() * 3200 + 2800);
-      }, 2100);
+        this._scheduleNextIdle(Math.random() * 3500 + 3500);
+      }, 2500);
 
       // Fallback de seguridad
-      this._scheduleNextIdle(4500);
+      this._scheduleNextIdle(5000);
 
     } else {
-      // Rutina 4: Mostrar zzz con globo botante (bounce) y luego despertar sobresaltado
+      // Rutina 4: Mostrar zzz con globo botante prolongado (6 segundos) y luego despertar sobresaltado
       this.setExpression('sleepy');
-      this.sayQuickRemark('<span class="zzz-bubble-text">Zzz...</span>', 2700, {
+      this.sayQuickRemark('<span class="zzz-bubble-text">Zzz...</span>', 5500, {
         isZzz: true,
         hideHeader: true,
         keepExpression: true
@@ -416,12 +449,12 @@ export class MascotView {
           setTimeout(() => {
             if (routineId === this.currentIdleRoutineId) this._triggerBlink();
           }, 240);
-          this._scheduleNextIdle(Math.random() * 3500 + 2800);
+          this._scheduleNextIdle(Math.random() * 3500 + 3500);
         }, 750);
-      }, 2800);
+      }, 6000);
 
       // Fallback de seguridad
-      this._scheduleNextIdle(5800);
+      this._scheduleNextIdle(8500);
     }
   }
 
@@ -450,6 +483,11 @@ export class MascotView {
     if (this.autoCloseTimer) {
       clearTimeout(this.autoCloseTimer);
       this.autoCloseTimer = null;
+    }
+
+    if (this.closeTransitionTimer) {
+      clearTimeout(this.closeTransitionTimer);
+      this.closeTransitionTimer = null;
     }
 
     this.isQuickRemark = Boolean(options.isQuickRemark);
@@ -504,38 +542,58 @@ export class MascotView {
   }
 
   /**
-   * Cierra el globo de diálogo y restaura el estado visual
+   * Cierra el globo de diálogo con transición suave de fade out
+   * @param {boolean} immediate - Si es true, oculta instantáneamente sin esperar la animación
    */
-  hideSpeechBubble() {
+  hideSpeechBubble(immediate = false) {
     if (this.autoCloseTimer) {
       clearTimeout(this.autoCloseTimer);
       this.autoCloseTimer = null;
+    }
+
+    if (this.closeTransitionTimer) {
+      clearTimeout(this.closeTransitionTimer);
+      this.closeTransitionTimer = null;
     }
 
     const bubble = document.getElementById('mascot-speech-bubble');
     const header = document.getElementById('mascot-bubble-header');
     if (!bubble) return;
 
-    bubble.className = 'mascot-speech-bubble hidden';
-    bubble.style.position = '';
-    bubble.style.bottom = '';
-    bubble.style.left = '';
-    bubble.style.right = '';
-    this.isBubbleOpen = false;
-    this.isQuickRemark = false;
+    const finalizeHide = () => {
+      bubble.className = 'mascot-speech-bubble hidden';
+      bubble.style.position = '';
+      bubble.style.bottom = '';
+      bubble.style.left = '';
+      bubble.style.right = '';
+      this.isBubbleOpen = false;
+      this.isQuickRemark = false;
 
-    if (header) header.classList.remove('hidden');
+      if (header) header.classList.remove('hidden');
 
-    if (this.currentExpression === 'happy' || this.currentExpression === 'wink' || this.currentExpression === 'surprised') {
-      this.setExpression('idle');
+      if (this.currentExpression === 'happy' || this.currentExpression === 'wink' || this.currentExpression === 'surprised') {
+        this.setExpression('idle');
+      }
+
+      if (this.onBubbleClose) {
+        this.onBubbleClose();
+      }
+
+      // Reactivar el ciclo ocioso de forma garantizada
+      this._scheduleNextIdle(2500);
+    };
+
+    if (immediate || bubble.classList.contains('hidden')) {
+      finalizeHide();
+      return;
     }
 
-    if (this.onBubbleClose) {
-      this.onBubbleClose();
-    }
-
-    // Reactivar el ciclo ocioso de forma garantizada
-    this._scheduleNextIdle(2000);
+    // Activar animación de salida (fade out suave)
+    bubble.classList.add('closing');
+    this.closeTransitionTimer = setTimeout(() => {
+      this.closeTransitionTimer = null;
+      finalizeHide();
+    }, 180);
   }
 
   toggleSpeechBubble(contentHtml, options = {}) {
