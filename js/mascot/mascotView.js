@@ -12,6 +12,7 @@ export class MascotView {
     this.isBubbleOpen = false;
     this.idleTimer = null;
     this.activeIdleActionTimer = null;
+    this.currentIdleRoutineId = 0;
     this.autoCloseTimer = null;
     this.onMascotClick = null;
     this.onBubbleClose = null;
@@ -156,6 +157,11 @@ export class MascotView {
    * @param {string} expr - 'idle' | 'happy' | 'dizzy' | 'thinking' | 'sleepy' | 'battle' | 'wink' | 'skeptical' | 'look-left' | 'look-right' | 'surprised'
    */
   setExpression(expr) {
+    const idleExpressions = ['idle', 'look-left', 'look-right', 'skeptical', 'sleepy', 'surprised'];
+    if (!idleExpressions.includes(expr)) {
+      this._cancelActiveIdleAction();
+    }
+
     this.currentExpression = expr;
     const leftEye = document.getElementById('mascot-left-eye');
     const rightEye = document.getElementById('mascot-right-eye');
@@ -265,88 +271,138 @@ export class MascotView {
   }
 
   /**
-   * Pestañeo puntual
+   * Pestañeo puntual con reflow forzado para garantizar animación CSS limpia
    */
   _triggerBlink() {
     const svg = document.getElementById('mascot-eyes-svg');
-    if (svg && this.currentExpression === 'idle') {
+    if (svg && (this.currentExpression === 'idle' || this.currentExpression === 'look-left' || this.currentExpression === 'look-right')) {
+      svg.classList.remove('blinking');
+      void svg.offsetWidth; // Forzar reflow para reiniciar la animación
       svg.classList.add('blinking');
-      setTimeout(() => svg.classList.remove('blinking'), 180);
+      setTimeout(() => svg.classList.remove('blinking'), 190);
     }
   }
 
   /**
    * Máquina de estados ociosa (Idle State Machine)
-   * Alterna fluidamente entre parpadeos, vacilar izq/der, cara escéptica de foto, y zzz con despertar
+   * Alterna fluidamente entre parpadeos, vacilar izq/der, cara escéptica de foto, y zzz con despertar.
+   * Diseñada con tolerancia a interrupciones, tokens de rutina e inmunidad a pausas involuntarias.
    */
   _startIdleCycle() {
-    const runNextIdle = () => {
-      // Si hay un globo abierto o una expresión activa no-idle, pausar ciclo
-      if (this.currentExpression !== 'idle' || this.isBubbleOpen) {
-        this.idleTimer = setTimeout(runNextIdle, 3000);
-        return;
-      }
+    this._scheduleNextIdle(2500);
+  }
 
-      const rand = Math.random();
+  _scheduleNextIdle(delayMs = 3000) {
+    if (this.idleTimer) {
+      clearTimeout(this.idleTimer);
+      this.idleTimer = null;
+    }
+    this.idleTimer = setTimeout(() => {
+      this._runNextIdle();
+    }, delayMs);
+  }
 
-      if (rand < 0.35) {
-        // Rutina 1: Pestañeo simple o doble
-        this._triggerBlink();
-        if (Math.random() < 0.35) {
-          setTimeout(() => this._triggerBlink(), 260);
-        }
-        this.idleTimer = setTimeout(runNextIdle, Math.random() * 3000 + 2500);
+  _cancelActiveIdleAction() {
+    if (this.activeIdleActionTimer) {
+      clearTimeout(this.activeIdleActionTimer);
+      this.activeIdleActionTimer = null;
+    }
+    this.currentIdleRoutineId++;
+  }
 
-      } else if (rand < 0.60) {
-        // Rutina 2: Mirar a la izquierda y derecha como vacilando
-        this.setExpression('look-left');
+  _runNextIdle() {
+    // Si el globo de diálogo está abierto, posponer y chequear de nuevo
+    if (this.isBubbleOpen) {
+      this._scheduleNextIdle(2500);
+      return;
+    }
+
+    // Si la mascota está en una interacción pedagógica activa de juego, posponer
+    const activeInteractions = ['battle', 'thinking', 'dizzy'];
+    if (activeInteractions.includes(this.currentExpression)) {
+      this._scheduleNextIdle(3000);
+      return;
+    }
+
+    // Normalizar expresión a idle si había quedado en una pose intermedia
+    if (this.currentExpression !== 'idle') {
+      this.setExpression('idle');
+    }
+
+    const routineId = ++this.currentIdleRoutineId;
+    const rand = Math.random();
+
+    if (rand < 0.38) {
+      // Rutina 1: Parpadeo simple o doble
+      this._triggerBlink();
+      if (Math.random() < 0.40) {
         this.activeIdleActionTimer = setTimeout(() => {
-          if (this.currentExpression === 'look-left') {
-            this.setExpression('look-right');
-            this.activeIdleActionTimer = setTimeout(() => {
-              if (this.currentExpression === 'look-right') {
-                this.setExpression('idle');
-                this._triggerBlink();
-              }
-              this.idleTimer = setTimeout(runNextIdle, Math.random() * 3500 + 3000);
-            }, 900);
-          }
-        }, 900);
-
-      } else if (rand < 0.82) {
-        // Rutina 3: Cara escéptica de la foto (ceja alzada)
-        this.setExpression('skeptical');
-        this.activeIdleActionTimer = setTimeout(() => {
-          if (this.currentExpression === 'skeptical') {
-            this.setExpression('idle');
+          if (routineId === this.currentIdleRoutineId && this.currentExpression === 'idle') {
             this._triggerBlink();
           }
-          this.idleTimer = setTimeout(runNextIdle, Math.random() * 4000 + 3200);
-        }, 2200);
-
-      } else {
-        // Rutina 4: Mostrar zzz y luego despertar sobresaltado
-        this.setExpression('sleepy');
-        this.activeIdleActionTimer = setTimeout(() => {
-          if (this.currentExpression === 'sleepy') {
-            // Despertar sobresaltado
-            this.setExpression('surprised');
-            const visor = document.getElementById('mascot-visor');
-            visor?.classList.add('waking-up');
-
-            setTimeout(() => {
-              visor?.classList.remove('waking-up');
-              this.setExpression('idle');
-              this._triggerBlink();
-              setTimeout(() => this._triggerBlink(), 240);
-              this.idleTimer = setTimeout(runNextIdle, Math.random() * 4000 + 3000);
-            }, 750);
-          }
-        }, 3200);
+        }, 260);
       }
-    };
+      this._scheduleNextIdle(Math.random() * 2500 + 2400);
 
-    this.idleTimer = setTimeout(runNextIdle, 3000);
+    } else if (rand < 0.62) {
+      // Rutina 2: Mirada a la izquierda, luego a la derecha, y regresar al centro
+      this.setExpression('look-left');
+
+      this.activeIdleActionTimer = setTimeout(() => {
+        if (routineId !== this.currentIdleRoutineId) return;
+        this.setExpression('look-right');
+
+        this.activeIdleActionTimer = setTimeout(() => {
+          if (routineId !== this.currentIdleRoutineId) return;
+          this.setExpression('idle');
+          this._triggerBlink();
+          this._scheduleNextIdle(Math.random() * 3000 + 2600);
+        }, 900);
+      }, 900);
+
+      // Fallback de seguridad en caso de desincronización
+      this._scheduleNextIdle(4500);
+
+    } else if (rand < 0.83) {
+      // Rutina 3: Cara escéptica de la foto (ceja alzada)
+      this.setExpression('skeptical');
+
+      this.activeIdleActionTimer = setTimeout(() => {
+        if (routineId !== this.currentIdleRoutineId) return;
+        this.setExpression('idle');
+        this._triggerBlink();
+        this._scheduleNextIdle(Math.random() * 3200 + 2800);
+      }, 2100);
+
+      // Fallback de seguridad
+      this._scheduleNextIdle(4500);
+
+    } else {
+      // Rutina 4: Mostrar zzz y luego despertar sobresaltado
+      this.setExpression('sleepy');
+
+      this.activeIdleActionTimer = setTimeout(() => {
+        if (routineId !== this.currentIdleRoutineId) return;
+        // Despertar sobresaltado
+        this.setExpression('surprised');
+        const visor = document.getElementById('mascot-visor');
+        visor?.classList.add('waking-up');
+
+        this.activeIdleActionTimer = setTimeout(() => {
+          visor?.classList.remove('waking-up');
+          if (routineId !== this.currentIdleRoutineId) return;
+          this.setExpression('idle');
+          this._triggerBlink();
+          setTimeout(() => {
+            if (routineId === this.currentIdleRoutineId) this._triggerBlink();
+          }, 240);
+          this._scheduleNextIdle(Math.random() * 3500 + 2800);
+        }, 750);
+      }, 2800);
+
+      // Fallback de seguridad
+      this._scheduleNextIdle(5800);
+    }
   }
 
   /**
@@ -357,10 +413,7 @@ export class MascotView {
     const body = document.getElementById('mascot-bubble-body');
     if (!bubble || !body) return;
 
-    if (this.activeIdleActionTimer) {
-      clearTimeout(this.activeIdleActionTimer);
-      this.activeIdleActionTimer = null;
-    }
+    this._cancelActiveIdleAction();
 
     if (this.autoCloseTimer) {
       clearTimeout(this.autoCloseTimer);
@@ -387,7 +440,7 @@ export class MascotView {
     this.isBubbleOpen = true;
 
     // Sonreír brevemente al abrir el globo
-    if (this.currentExpression === 'idle' || this.currentExpression === 'sleepy' || this.currentExpression === 'skeptical') {
+    if (this.currentExpression === 'idle' || this.currentExpression === 'sleepy' || this.currentExpression === 'skeptical' || this.currentExpression === 'look-left' || this.currentExpression === 'look-right') {
       this.setExpression('happy');
       setTimeout(() => {
         if (this.isBubbleOpen && this.currentExpression === 'happy') {
@@ -421,13 +474,16 @@ export class MascotView {
     bubble.style.right = '';
     this.isBubbleOpen = false;
 
-    if (this.currentExpression === 'happy' || this.currentExpression === 'wink') {
+    if (this.currentExpression === 'happy' || this.currentExpression === 'wink' || this.currentExpression === 'surprised') {
       this.setExpression('idle');
     }
 
     if (this.onBubbleClose) {
       this.onBubbleClose();
     }
+
+    // Reactivar el ciclo ocioso de forma garantizada
+    this._scheduleNextIdle(2000);
   }
 
   toggleSpeechBubble(contentHtml) {

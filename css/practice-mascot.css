@@ -93,6 +93,14 @@
 }
 
 /* Expresiones dinámicas */
+.mascot-visor.expr-look-left .mascot-eyes-svg {
+  transform: translateX(-14px);
+}
+
+.mascot-visor.expr-look-right .mascot-eyes-svg {
+  transform: translateX(14px);
+}
+
 .mascot-visor.expr-happy .mascot-eyes-svg {
   color: var(--pop-green);
   filter: drop-shadow(0 0 10px rgba(88, 204, 2, 0.95));
@@ -140,9 +148,13 @@
   filter: drop-shadow(0 0 10px rgba(28, 176, 246, 0.95));
 }
 
+.mascot-visor.expr-sleepy .mascot-eyes-svg {
+  opacity: 0.72;
+}
+
 @keyframes mascotSkepticalTilt {
   0%, 100% { transform: rotate(0deg); }
-  20%, 80% { transform: rotate(-3.5deg) translateY(-2px); }
+  25%, 75% { transform: rotate(-4.5deg) translateY(-2px); }
 }
 
 .mascot-visor.waking-up {
@@ -151,7 +163,7 @@
 
 @keyframes mascotWakeUp {
   0% { transform: translateY(0) scale(0.96); }
-  35% { transform: translateY(-9px) scale(1.08); }
+  35% { transform: translateY(-10px) scale(1.08); }
   65% { transform: translateY(2px) scale(0.98); }
   100% { transform: translateY(0) scale(1); }
 }
@@ -168,7 +180,7 @@
 }
 
 .mascot-zzz-container.hidden {
-  display: none;
+  display: none !important;
 }
 
 .zzz {
@@ -192,12 +204,22 @@
 
 @keyframes eyeBlink {
   0%, 100% { transform: scaleY(1); }
-  50% { transform: scaleY(0.08); }
+  45%, 55% { transform: scaleY(0.06); }
 }
 
 .mascot-eyes-svg.blinking {
-  animation: eyeBlink 0.18s ease-in-out;
+  transform-origin: 50% 50%;
+}
+
+.mascot-eyes-svg.blinking .mascot-eye,
+.mascot-eyes-svg.blinking .eye-pill,
+.mascot-eyes-svg.blinking rect,
+.mascot-eyes-svg.blinking path,
+.mascot-eyes-svg.blinking circle,
+.mascot-eyes-svg.blinking line {
+  transform-box: fill-box;
   transform-origin: center;
+  animation: eyeBlink 0.19s ease-in-out;
 }
 
 @keyframes mascotHappyHop {
