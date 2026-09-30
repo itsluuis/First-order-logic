@@ -273,6 +273,8 @@ function initAuth() {
     dbService.logout();
     AppState.currentUser = null;
     AppState.currentSectionId = null;
+    AppState.selectedProfileId = 'estudiante';
+    AppState.authMode = 'login';
 
     // Recargar modelo neuronal para limpiar memoria de la sesión anterior
     studentModel.reloadForCurrentUser();
@@ -298,6 +300,28 @@ function openAuthModal() {
   const authModal = document.getElementById('auth-modal');
   authModal?.classList.add('active');
   hideAuthAlert();
+  resetAuthForm();
+
+  // Sincronizar tarjetas de selección de perfil visualmente
+  const profileCards = document.querySelectorAll('.profile-card');
+  profileCards.forEach(card => {
+    if (card.getAttribute('data-profile-id') === AppState.selectedProfileId) {
+      card.classList.add('active');
+    } else {
+      card.classList.remove('active');
+    }
+  });
+
+  // Sincronizar botones de modo (Iniciar Sesión / Registrarse)
+  const modeTabs = document.querySelectorAll('.auth-mode-tab');
+  modeTabs.forEach(t => {
+    if (t.getAttribute('data-mode') === (AppState.authMode || 'login')) {
+      t.classList.add('active');
+    } else {
+      t.classList.remove('active');
+    }
+  });
+
   updateProfileFormUI();
 }
 
@@ -346,6 +370,7 @@ function updateProfileFormUI() {
   const credentialHint = document.getElementById('auth-credential-hint');
   const confirmLabel = document.getElementById('auth-confirm-label');
   const confirmInput = document.getElementById('auth-confirm-credential');
+  const adminPass = document.getElementById('login-password');
 
   const profile = Object.values(PROFILES).find(p => p.id === profileId);
   const profileName = profile ? profile.name : 'Usuario';
@@ -356,10 +381,16 @@ function updateProfileFormUI() {
     userFields?.classList.add('hidden');
     adminFields?.classList.remove('hidden');
 
-    const adminPass = document.getElementById('login-password');
     if (adminPass) {
       adminPass.required = true;
+      adminPass.disabled = false;
       adminPass.focus();
+    }
+    if (usernameInput) usernameInput.disabled = true;
+    if (credentialInput) credentialInput.disabled = true;
+    if (confirmInput) {
+      confirmInput.required = false;
+      confirmInput.disabled = true;
     }
     if (submitBtn) submitBtn.textContent = 'Ingresar como Administrador';
     return;
@@ -369,6 +400,15 @@ function updateProfileFormUI() {
   modeTabs?.classList.remove('hidden');
   userFields?.classList.remove('hidden');
   adminFields?.classList.add('hidden');
+
+  // Asegurar que el campo de contraseña de administrador NUNCA quede requerido ni activo en perfiles de usuario
+  if (adminPass) {
+    adminPass.required = false;
+    adminPass.disabled = true;
+    adminPass.value = '';
+  }
+  if (usernameInput) usernameInput.disabled = false;
+  if (credentialInput) credentialInput.disabled = false;
 
   // Ajustes según Estudiante vs Profesor
   if (profileId === 'estudiante') {
@@ -425,12 +465,16 @@ function updateProfileFormUI() {
   // Ajustes según Modo (Iniciar Sesión vs Registrarse)
   if (mode === 'register') {
     confirmGroup?.classList.remove('hidden');
-    if (confirmInput) confirmInput.required = true;
+    if (confirmInput) {
+      confirmInput.required = true;
+      confirmInput.disabled = false;
+    }
     if (submitBtn) submitBtn.textContent = `Crear Cuenta e Ingresar como ${profileName}`;
   } else {
     confirmGroup?.classList.add('hidden');
     if (confirmInput) {
       confirmInput.required = false;
+      confirmInput.disabled = true;
       confirmInput.value = '';
     }
     if (submitBtn) submitBtn.textContent = `Ingresar al Sistema como ${profileName}`;

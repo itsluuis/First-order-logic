@@ -1,0 +1,9 @@
+{
+  "name": "proposiciones-moleculares",
+  "version": "1.0.0",
+  "description": "Software de Logica Simbolica y Proposiciones Moleculares",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/**/*.test.js"
+  }
+}
