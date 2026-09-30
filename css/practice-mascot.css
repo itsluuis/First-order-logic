@@ -270,6 +270,52 @@
   100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 
+@keyframes zzzBounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-7px) scale(1.05); }
+}
+
+/* Variantes de globos espontáneos para dar más vida a Moli */
+.mascot-speech-bubble.bubble-compact {
+  width: auto;
+  min-width: 150px;
+  max-width: 270px;
+  padding: 12px 18px;
+}
+
+.mascot-speech-bubble.bubble-zzz {
+  width: auto;
+  min-width: 96px;
+  max-width: 140px;
+  padding: 10px 16px;
+  text-align: center;
+  border-color: var(--pop-blue);
+  animation: bubblePop 0.25s ease-out, zzzBounce 1.5s infinite ease-in-out;
+}
+
+.mascot-speech-bubble.bubble-streak {
+  border-color: var(--pop-green);
+  box-shadow: 0 6px 0 var(--pop-green-shadow), 0 16px 40px rgba(0, 0, 0, 0.4);
+  animation: bubblePop 0.25s ease-out, mascotHappyHop 0.45s ease;
+}
+
+.mascot-speech-bubble.bubble-streak::after {
+  border-top-color: var(--pop-green);
+}
+
+.mascot-bubble-header.hidden {
+  display: none !important;
+}
+
+.zzz-bubble-text {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: var(--pop-blue);
+  letter-spacing: 2.5px;
+  display: block;
+}
+
 .mascot-bubble-header {
   display: flex;
   align-items: center;

@@ -51,6 +51,7 @@ export class PracticeEngine {
     this.botScore = 0; // Para el duelo
     this.totalAttempts = 0;
     this.correctAnswers = 0;
+    this.streak = 0;
     this.currentChallenge = null;
     this.challengeStartTime = 0;
 
@@ -82,6 +83,7 @@ export class PracticeEngine {
     this.botScore = 0;
     this.totalAttempts = 0;
     this.correctAnswers = 0;
+    this.streak = 0;
     this.lastFBFs = [];
     this.lastCorrectOptionIndex = -1;
 
@@ -123,6 +125,7 @@ export class PracticeEngine {
     }
     this.isPlaying = false;
     this.currentChallenge = null;
+    this.streak = 0;
 
     if (this.mascotController) {
       this.mascotController.notifyGameExit();
@@ -138,6 +141,7 @@ export class PracticeEngine {
       this.timerInterval = null;
     }
     this.isPlaying = false;
+    this.streak = 0;
 
     const accuracy = this.totalAttempts > 0 
       ? Math.round((this.correctAnswers / this.totalAttempts) * 100) 
@@ -440,8 +444,14 @@ export class PracticeEngine {
     if (isCorrect) {
       this.score++;
       this.correctAnswers++;
-      if (this.mascotController) this.mascotController.react('happy');
+      this.streak++;
+      if (this.streak > 0 && this.streak % 5 === 0) {
+        if (this.mascotController) this.mascotController.celebrateStreak(this.streak);
+      } else {
+        if (this.mascotController) this.mascotController.react('happy');
+      }
     } else {
+      this.streak = 0;
       if (this.mascotController) this.mascotController.react('dizzy');
     }
 
@@ -513,8 +523,14 @@ export class PracticeEngine {
     if (isCorrect) {
       this.score++;
       this.correctAnswers++;
-      if (this.mascotController) this.mascotController.react('happy');
+      this.streak++;
+      if (this.streak > 0 && this.streak % 5 === 0) {
+        if (this.mascotController) this.mascotController.celebrateStreak(this.streak);
+      } else {
+        if (this.mascotController) this.mascotController.react('happy');
+      }
     } else {
+      this.streak = 0;
       if (this.mascotController) this.mascotController.react('dizzy');
     }
 
@@ -545,8 +561,14 @@ export class PracticeEngine {
     if (isCorrect) {
       this.score++;
       this.correctAnswers++;
-      if (this.mascotController) this.mascotController.react('happy');
+      this.streak++;
+      if (this.streak > 0 && this.streak % 5 === 0) {
+        if (this.mascotController) this.mascotController.celebrateStreak(this.streak);
+      } else {
+        if (this.mascotController) this.mascotController.react('happy');
+      }
     } else {
+      this.streak = 0;
       this.score = Math.max(0, this.score - 1);
       if (this.mascotController) this.mascotController.react('dizzy');
     }
@@ -578,8 +600,14 @@ export class PracticeEngine {
     if (isCorrect) {
       this.score++;
       this.correctAnswers++;
-      if (this.mascotController) this.mascotController.react('happy');
+      this.streak++;
+      if (this.streak > 0 && this.streak % 5 === 0) {
+        if (this.mascotController) this.mascotController.celebrateStreak(this.streak);
+      } else {
+        if (this.mascotController) this.mascotController.react('happy');
+      }
     } else {
+      this.streak = 0;
       if (this.mascotController) this.mascotController.react('dizzy');
     }
 

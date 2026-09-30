@@ -10,6 +10,7 @@ export class MascotView {
     this.container = document.getElementById(containerId);
     this.currentExpression = 'idle';
     this.isBubbleOpen = false;
+    this.isQuickRemark = false;
     this.idleTimer = null;
     this.activeIdleActionTimer = null;
     this.currentIdleRoutineId = 0;
@@ -32,7 +33,7 @@ export class MascotView {
     this.container.innerHTML = `
       <!-- Globo de Diálogo Flotante (Auto-cierre a los 4s, sin botón de cierre) -->
       <div id="mascot-speech-bubble" class="mascot-speech-bubble hidden">
-        <div class="mascot-bubble-header">
+        <div id="mascot-bubble-header" class="mascot-bubble-header">
           <div class="mascot-bubble-title">
             <span class="mascot-status-dot"></span>
             <strong>Moli</strong>
@@ -364,11 +365,24 @@ export class MascotView {
       this._scheduleNextIdle(4500);
 
     } else if (rand < 0.83) {
-      // Rutina 3: Cara escéptica de la foto (ceja alzada)
+      // Rutina 3: Cara escéptica de la foto (ceja alzada) y comentario curioso espontáneo
       this.setExpression('skeptical');
+
+      const skepticalRemarks = [
+        '¿Sigues ahí?',
+        '¿Te gustaría practicar?',
+        '¿Dudas con las fórmulas? Haz clic en mí',
+        'Observando atentamente...'
+      ];
+      const remark = skepticalRemarks[Math.floor(Math.random() * skepticalRemarks.length)];
+      this.sayQuickRemark(`<p style="margin: 0; font-weight: 700; font-size: 0.95rem; line-height: 1.35;">${remark}</p>`, 2100, {
+        isCompact: true,
+        keepExpression: true
+      });
 
       this.activeIdleActionTimer = setTimeout(() => {
         if (routineId !== this.currentIdleRoutineId) return;
+        this.hideSpeechBubble();
         this.setExpression('idle');
         this._triggerBlink();
         this._scheduleNextIdle(Math.random() * 3200 + 2800);
@@ -378,11 +392,17 @@ export class MascotView {
       this._scheduleNextIdle(4500);
 
     } else {
-      // Rutina 4: Mostrar zzz y luego despertar sobresaltado
+      // Rutina 4: Mostrar zzz con globo botante (bounce) y luego despertar sobresaltado
       this.setExpression('sleepy');
+      this.sayQuickRemark('<span class="zzz-bubble-text">Zzz...</span>', 2700, {
+        isZzz: true,
+        hideHeader: true,
+        keepExpression: true
+      });
 
       this.activeIdleActionTimer = setTimeout(() => {
         if (routineId !== this.currentIdleRoutineId) return;
+        this.hideSpeechBubble();
         // Despertar sobresaltado
         this.setExpression('surprised');
         const visor = document.getElementById('mascot-visor');
@@ -406,11 +426,23 @@ export class MascotView {
   }
 
   /**
-   * Muestra el globo de diálogo con auto-cierre exacto a los 4 segundos
+   * Muestra un comentario espontáneo breve para dar dinamismo a la mascota
    */
-  showSpeechBubble(contentHtml) {
+  sayQuickRemark(contentHtml, durationMs = 2800, options = {}) {
+    this.showSpeechBubble(contentHtml, {
+      ...options,
+      isQuickRemark: true,
+      durationMs
+    });
+  }
+
+  /**
+   * Muestra el globo de diálogo con soporte para variantes espontáneas y auto-cierre
+   */
+  showSpeechBubble(contentHtml, options = {}) {
     const bubble = document.getElementById('mascot-speech-bubble');
     const body = document.getElementById('mascot-bubble-body');
+    const header = document.getElementById('mascot-bubble-header');
     if (!bubble || !body) return;
 
     this._cancelActiveIdleAction();
@@ -420,10 +452,23 @@ export class MascotView {
       this.autoCloseTimer = null;
     }
 
+    this.isQuickRemark = Boolean(options.isQuickRemark);
     body.innerHTML = contentHtml;
 
+    // Resetear clases y aplicar modificadores de estilo
+    const isDocked = this.visor && this.visor.classList.contains('docked');
+    bubble.className = `mascot-speech-bubble${options.isZzz ? ' bubble-zzz' : ''}${options.isCompact ? ' bubble-compact' : ''}${options.isStreak ? ' bubble-streak' : ''}`;
+
+    if (header) {
+      if (options.hideHeader) {
+        header.classList.add('hidden');
+      } else {
+        header.classList.remove('hidden');
+      }
+    }
+
     // Si la mascota está acoplada en una tarjeta, posicionar el globo justo encima
-    if (this.visor && this.visor.classList.contains('docked')) {
+    if (isDocked) {
       const rect = this.visor.getBoundingClientRect();
       bubble.style.position = 'fixed';
       bubble.style.bottom = `${Math.max(20, window.innerHeight - rect.top + 14)}px`;
@@ -439,24 +484,27 @@ export class MascotView {
     bubble.classList.remove('hidden');
     this.isBubbleOpen = true;
 
-    // Sonreír brevemente al abrir el globo
-    if (this.currentExpression === 'idle' || this.currentExpression === 'sleepy' || this.currentExpression === 'skeptical' || this.currentExpression === 'look-left' || this.currentExpression === 'look-right') {
-      this.setExpression('happy');
-      setTimeout(() => {
-        if (this.isBubbleOpen && this.currentExpression === 'happy') {
-          this.setExpression('idle');
-        }
-      }, 1200);
+    // Sonreír brevemente al abrir el globo si no es Zzz o si se pidió mantener expresión
+    if (!options.isZzz && !options.keepExpression) {
+      if (this.currentExpression === 'idle' || this.currentExpression === 'sleepy' || this.currentExpression === 'look-left' || this.currentExpression === 'look-right') {
+        this.setExpression('happy');
+        setTimeout(() => {
+          if (this.isBubbleOpen && this.currentExpression === 'happy') {
+            this.setExpression('idle');
+          }
+        }, 1200);
+      }
     }
 
-    // Auto-cierre estricto a los 4 segundos
+    // Auto-cierre del globo
+    const duration = options.durationMs || 4000;
     this.autoCloseTimer = setTimeout(() => {
       this.hideSpeechBubble();
-    }, 4000);
+    }, duration);
   }
 
   /**
-   * Cierra el globo de diálogo
+   * Cierra el globo de diálogo y restaura el estado visual
    */
   hideSpeechBubble() {
     if (this.autoCloseTimer) {
@@ -465,14 +513,18 @@ export class MascotView {
     }
 
     const bubble = document.getElementById('mascot-speech-bubble');
+    const header = document.getElementById('mascot-bubble-header');
     if (!bubble) return;
 
-    bubble.classList.add('hidden');
+    bubble.className = 'mascot-speech-bubble hidden';
     bubble.style.position = '';
     bubble.style.bottom = '';
     bubble.style.left = '';
     bubble.style.right = '';
     this.isBubbleOpen = false;
+    this.isQuickRemark = false;
+
+    if (header) header.classList.remove('hidden');
 
     if (this.currentExpression === 'happy' || this.currentExpression === 'wink' || this.currentExpression === 'surprised') {
       this.setExpression('idle');
@@ -486,11 +538,11 @@ export class MascotView {
     this._scheduleNextIdle(2000);
   }
 
-  toggleSpeechBubble(contentHtml) {
+  toggleSpeechBubble(contentHtml, options = {}) {
     if (this.isBubbleOpen) {
       this.hideSpeechBubble();
     } else {
-      this.showSpeechBubble(contentHtml);
+      this.showSpeechBubble(contentHtml, options);
     }
   }
 }

@@ -39,7 +39,7 @@ export class MascotController {
    * Gestiona el clic del usuario sobre la mascota según la pestaña o minijuego activo
    */
   handleMascotClick() {
-    if (this.view.isBubbleOpen) {
+    if (this.view.isBubbleOpen && !this.view.isQuickRemark) {
       this.view.hideSpeechBubble();
       return;
     }
@@ -216,5 +216,30 @@ export class MascotController {
         }
       }, 1800);
     }
+  }
+
+  /**
+   * Celebra una racha de respuestas correctas consecutivas
+   */
+  celebrateStreak(streak) {
+    const compliments = [
+      '¡Bien hecho!',
+      '¡Parece que lo entiendes!',
+      '¡Destroza esos ejercicios!',
+      '¡Eres el mejor!',
+      '¡Racha imparable!'
+    ];
+    const phrase = compliments[Math.floor(Math.random() * compliments.length)];
+    this.view.setExpression('happy');
+    this.view.sayQuickRemark(`
+      <div style="text-align: center;">
+        <span style="font-size: 0.78rem; text-transform: uppercase; font-weight: 800; color: var(--pop-green); letter-spacing: 0.5px; display: block; margin-bottom: 2px;">
+          Racha de ${streak} Aciertos
+        </span>
+        <strong style="font-size: 1.05rem; color: var(--text-primary); display: block;">
+          ${phrase}
+        </strong>
+      </div>
+    `, 3200, { isStreak: true, isCompact: true, keepExpression: true });
   }
 }
