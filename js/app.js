@@ -65,6 +65,77 @@ function showToast(message, type = 'info') {
 }
 
 // =============================================================================
+// MODAL DE CONFIRMACIÓN EN LA WEB (Reemplaza diálogos nativos del navegador)
+// =============================================================================
+function showConfirmDialog({
+  title = '¿Confirmar acción?',
+  message = 'Esta acción no se puede deshacer.',
+  confirmText = 'Eliminar',
+  cancelText = 'Cancelar',
+  danger = true
+} = {}) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('modal-confirm');
+    const titleEl = document.getElementById('confirm-modal-title');
+    const msgEl = document.getElementById('confirm-modal-message');
+    const btnAccept = document.getElementById('btn-confirm-accept');
+    const btnCancel = document.getElementById('btn-confirm-cancel');
+    const iconContainer = document.getElementById('confirm-modal-icon');
+
+    if (!modal) {
+      resolve(true);
+      return;
+    }
+
+    if (titleEl) titleEl.textContent = title;
+    if (msgEl) msgEl.textContent = message;
+    if (btnAccept) {
+      btnAccept.textContent = confirmText;
+      btnAccept.className = danger ? 'btn btn-danger' : 'btn btn-primary';
+    }
+    if (btnCancel) btnCancel.textContent = cancelText;
+
+    if (iconContainer) {
+      iconContainer.innerHTML = danger
+        ? `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`
+        : `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+      iconContainer.className = danger ? 'confirm-modal-icon confirm-icon-danger' : 'confirm-modal-icon confirm-icon-info';
+    }
+
+    modal.classList.add('active');
+
+    function cleanup(result) {
+      modal.classList.remove('active');
+      btnAccept?.removeEventListener('click', onAccept);
+      btnCancel?.removeEventListener('click', onCancel);
+      document.removeEventListener('keydown', onKeyDown);
+      modal.removeEventListener('click', onBackdrop);
+      resolve(result);
+    }
+
+    function onAccept() { cleanup(true); }
+    function onCancel() { cleanup(false); }
+    function onKeyDown(e) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        cleanup(false);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        cleanup(true);
+      }
+    }
+    function onBackdrop(e) {
+      if (e.target === modal) cleanup(false);
+    }
+
+    btnAccept?.addEventListener('click', onAccept);
+    btnCancel?.addEventListener('click', onCancel);
+    document.addEventListener('keydown', onKeyDown);
+    modal.addEventListener('click', onBackdrop);
+  });
+}
+
+// =============================================================================
 // GESTIÓN DE TEMAS (DARK / LIGHT)
 // =============================================================================
 function initTheme() {
@@ -589,7 +660,7 @@ function initAdminEvents() {
   });
 
   // Eliminar usuario seleccionado
-  document.getElementById('btn-admin-delete-user')?.addEventListener('click', () => {
+  document.getElementById('btn-admin-delete-user')?.addEventListener('click', async () => {
     const userSelect = document.getElementById('admin-user-select');
     const userId = userSelect ? userSelect.value : '';
     if (!userId) {
@@ -605,7 +676,15 @@ function initAdminEvents() {
       ? `¿Estás seguro de eliminar al profesor "${userName}"? Esto también eliminará en cascada todas sus secciones creadas y sus tareas.`
       : `¿Estás seguro de eliminar al estudiante "${userName}"? Se desvinculará de todas sus secciones y se limpiará su perfil.`;
 
-    if (!window.confirm(confirmMsg)) return;
+    const confirmed = await showConfirmDialog({
+      title: isProf ? '¿Eliminar Profesor?' : '¿Eliminar Estudiante?',
+      message: confirmMsg,
+      confirmText: 'Eliminar Usuario',
+      cancelText: 'Cancelar',
+      danger: true
+    });
+
+    if (!confirmed) return;
 
     const res = dbService.deleteUser(userId);
     if (res.success) {
@@ -623,7 +702,7 @@ function initAdminEvents() {
   });
 
   // Eliminar sección seleccionada
-  document.getElementById('btn-admin-delete-section')?.addEventListener('click', () => {
+  document.getElementById('btn-admin-delete-section')?.addEventListener('click', async () => {
     const secSelect = document.getElementById('admin-section-select');
     const sectionId = secSelect ? secSelect.value : '';
     if (!sectionId) {
@@ -634,9 +713,15 @@ function initAdminEvents() {
     const section = sectionsDB.getSectionById(sectionId);
     const secName = section ? section.name : 'esta sección';
 
-    if (!window.confirm(`¿Estás seguro de eliminar permanentemente la sección "${secName}" y todas sus tareas?`)) {
-      return;
-    }
+    const confirmed = await showConfirmDialog({
+      title: '¿Eliminar Sección?',
+      message: `¿Estás seguro de eliminar permanentemente la sección "${secName}" y todas sus tareas asignadas?`,
+      confirmText: 'Eliminar Sección',
+      cancelText: 'Cancelar',
+      danger: true
+    });
+
+    if (!confirmed) return;
 
     const res = sectionsDB.deleteSection(sectionId);
     if (res.success) {
@@ -716,7 +801,7 @@ function renderAtomicDefinitions() {
     card.innerHTML = `
       <span class="atomic-var-badge">${item.name}</span>
       <input type="text" class="form-input atomic-text-input" id="atomic-input-${item.name}" data-var="${item.name}" value="${item.text}" placeholder="Enunciado de ${item.name}..." style="font-size: 0.9rem; padding: 0.5rem 0.75rem;">
-      <button class="btn-clear-inline btn-clear-atomic-field" data-var="${item.name}" title="Limpiar enunciado de ${item.name}">✕</button>
+      <button class="btn-clear-inline btn-clear-atomic-field" data-var="${item.name}" title="Limpiar enunciado de ${item.name}">${ICONS.close}</button>
       ${index > 1 ? `<button class="btn-clear-inline btn-remove-atomic" data-index="${index}" title="Eliminar variable" style="color: var(--accent-rose); display: inline-flex; align-items: center; justify-content: center;">${ICONS.trash}</button>` : ''}
     `;
     container.appendChild(card);
@@ -744,7 +829,7 @@ function renderAtomicDefinitions() {
     });
   });
 
-  // Listeners para botón '✕' de limpiar campo individual
+  // Listeners para botón de limpiar campo individual
   container.querySelectorAll('.btn-clear-atomic-field').forEach(btn => {
     btn.addEventListener('click', () => {
       const v = btn.getAttribute('data-var');
@@ -1096,7 +1181,7 @@ function renderInverseVarInputs(vars) {
     div.innerHTML = `
       <span class="atomic-var-badge">${v}</span>
       <input type="text" id="inverse-var-input-${v}" class="form-input" placeholder="Escribe el enunciado en español para la proposición ${v}..." style="font-size: 0.95rem;">
-      <button class="btn-clear-inline btn-clear-inverse-single" data-var="${v}" title="Limpiar enunciado de ${v}">✕</button>
+      <button class="btn-clear-inline btn-clear-inverse-single" data-var="${v}" title="Limpiar enunciado de ${v}">${ICONS.close}</button>
     `;
     container.appendChild(div);
 
@@ -1696,9 +1781,16 @@ function openSectionDetail(sectionId) {
             <span>${stName}</span>
             <button type="button" class="student-chip-btn-remove" title="Quitar de la sección">&times;</button>
           `;
-          chip.querySelector('.student-chip-btn-remove')?.addEventListener('click', (e) => {
+          chip.querySelector('.student-chip-btn-remove')?.addEventListener('click', async (e) => {
             e.stopPropagation();
-            if (window.confirm(`¿Quitar a "${stName}" de esta sección?`)) {
+            const confirmed = await showConfirmDialog({
+              title: '¿Quitar Alumno?',
+              message: `¿Deseas desvincular a "${stName}" de esta sección?`,
+              confirmText: 'Quitar Alumno',
+              cancelText: 'Cancelar',
+              danger: true
+            });
+            if (confirmed) {
               sectionsDB.removeStudentFromSection(section.id, stId);
               showToast(`"${stName}" removido de la sección.`, 'info');
               openSectionDetail(section.id);
@@ -1792,8 +1884,15 @@ function renderProfessorTasks(section) {
       dropdown.classList.toggle('hidden');
     });
 
-    taskEl.querySelector('.btn-delete-task')?.addEventListener('click', () => {
-      if (window.confirm(`¿Deseas eliminar esta tarea de la sección?`)) {
+    taskEl.querySelector('.btn-delete-task')?.addEventListener('click', async () => {
+      const confirmed = await showConfirmDialog({
+        title: '¿Eliminar Tarea?',
+        message: '¿Deseas eliminar permanentemente esta tarea de la sección?',
+        confirmText: 'Eliminar Tarea',
+        cancelText: 'Cancelar',
+        danger: true
+      });
+      if (confirmed) {
         sectionsDB.deleteTask(section.id, t.id);
         showToast('Tarea eliminada.', 'info');
         openSectionDetail(section.id);
