@@ -1468,3 +1468,156 @@ body {
 .mt-2 { margin-top: 1rem; }
 .mt-3 { margin-top: 1.5rem; }
 .hidden { display: none !important; }
+
+/* ==========================================================================
+   POPOVER CONTEXTUAL NEOPOP PARA ELEMENTOS GUARDADOS
+   ========================================================================== */
+.saved-items-popover {
+  position: fixed;
+  z-index: 1000;
+  width: 350px;
+  max-width: calc(100vw - 24px);
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45), 0 4px 0 var(--border-3d-shadow);
+  animation: popIn 0.15s ease-out;
+  overflow: hidden;
+}
+
+.saved-popover-header {
+  padding: 0.6rem 0.8rem;
+  background: var(--bg-subtle);
+  border-bottom: 2px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.saved-popover-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+.saved-popover-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.saved-popover-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--pop-blue);
+  flex-shrink: 0;
+}
+
+.saved-popover-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.saved-popover-quota {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-color);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--pop-blue);
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-full);
+}
+
+.saved-items-list {
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 0.45rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.saved-popover-empty {
+  padding: 1.25rem 0.75rem;
+  text-align: center;
+}
+
+.saved-item-row {
+  padding: 0.45rem 0.6rem;
+  background: var(--bg-subtle);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  transition: all var(--transition-fast);
+}
+
+.saved-item-row:hover {
+  border-color: var(--pop-blue);
+  background: var(--bg-card);
+}
+
+.saved-item-text {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 175px;
+  flex-grow: 1;
+}
+
+.saved-item-molecule-col {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-width: 175px;
+  flex-grow: 1;
+}
+
+.saved-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.btn-xs {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+.saved-item-var-pills {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.btn-var-pill {
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.35rem;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  font-family: var(--font-mono);
+}
+
+.btn-var-pill:hover {
+  border-color: var(--pop-blue);
+  color: var(--pop-blue);
+  transform: translateY(-1px);
+}
