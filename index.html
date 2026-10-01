@@ -93,7 +93,13 @@
               <h2 class="card-title">1. Proposiciones Atómicas</h2>
               <p class="card-subtitle">Asigna enunciados en lenguaje natural para cada variable básica.</p>
             </div>
-            <div class="flex gap-1">
+            <div class="flex gap-1" style="flex-wrap: wrap;">
+              <button id="btn-save-atomic-builder" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;" title="Guardar proposición atómica">
+                Guardar Atómica
+              </button>
+              <button id="btn-open-atomic-builder-picker" class="btn btn-secondary saved-picker-trigger" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;" title="Ver y agregar proposiciones atómicas guardadas">
+                Agregar Atómica
+              </button>
               <button id="btn-randomize-atomics-builder" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;" title="Generar enunciados aleatorios para todas las variables activas">
                 Atómicas Aleatorias
               </button>
@@ -175,14 +181,32 @@
           <div class="formula-display-box">
             <div class="flex-between">
               <span class="form-label" style="color: var(--accent-cyan);">Fórmula Bien Formada (FBF) Resultante:</span>
-              <button id="btn-quick-clear-formula" class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" title="Limpiar proposición molecular">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 3px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>Limpiar
-              </button>
+              <div class="flex gap-1">
+                <button id="btn-save-fbf-builder" class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" title="Guardar esta FBF">
+                  Guardar FBF
+                </button>
+                <button id="btn-open-fbf-builder-picker" class="btn btn-secondary saved-picker-trigger" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" title="Agregar FBF guardada">
+                  Agregar FBF
+                </button>
+                <button id="btn-quick-clear-formula" class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" title="Limpiar proposición molecular">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 3px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>Limpiar
+                </button>
+              </div>
             </div>
             <div id="builder-fbf-output" class="formula-display-text">--</div>
 
             <div style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
-              <span class="form-label" style="color: var(--accent-purple);">Proposición Molecular en Lenguaje Natural:</span>
+              <div class="flex-between">
+                <span class="form-label" style="color: var(--accent-purple);">Proposición Molecular en Lenguaje Natural:</span>
+                <div class="flex gap-1">
+                  <button id="btn-save-molecular-builder" class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" title="Guardar proposición molecular con su FBF">
+                    Guardar Molecular
+                  </button>
+                  <button id="btn-open-molecular-builder-picker" class="btn btn-secondary saved-picker-trigger" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" title="Agregar proposición molecular guardada">
+                    Agregar Molecular
+                  </button>
+                </div>
+              </div>
               <p id="builder-sentence-output" class="sentence-display-text text-muted">
                 Define las proposiciones y conecta los elementos para visualizar la oración completa.
               </p>
@@ -217,9 +241,15 @@
 
         <div class="form-group">
           <label class="form-label">Introduce la Fórmula Bien Formada (FBF):</label>
-          <div class="flex gap-1">
-            <input type="text" id="inverse-fbf-input" class="form-input formula-input" placeholder="Ejemplo: (p ∧ q) → ¬r o p ∨ (q → r)">
+          <div class="flex gap-1" style="flex-wrap: wrap;">
+            <input type="text" id="inverse-fbf-input" class="form-input formula-input" placeholder="Ejemplo: (p ∧ q) → ¬r o p ∨ (q → r)" style="flex: 1; min-width: 200px;">
             <button id="btn-clear-inverse-input" class="btn-clear-inline" title="Limpiar campo FBF"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            <button id="btn-save-fbf-inverse" class="btn btn-secondary" title="Guardar FBF actual">
+              Guardar FBF
+            </button>
+            <button id="btn-open-fbf-inverse-picker" class="btn btn-secondary saved-picker-trigger" title="Agregar FBF guardada">
+              Agregar FBF
+            </button>
             <button id="btn-parse-inverse" class="btn btn-primary">
               Analizar FBF
             </button>
@@ -253,9 +283,17 @@
                 Puedes escribir los enunciados manualmente o usar el botón para autocompletarlos de forma aleatoria.
               </p>
             </div>
-            <button id="btn-randomize-inverse-vars" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">
-              Generar Atómicas Aleatorias
-            </button>
+            <div class="flex gap-1" style="flex-wrap: wrap;">
+              <button id="btn-save-atomic-inverse" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;" title="Guardar proposición atómica">
+                Guardar Atómica
+              </button>
+              <button id="btn-open-atomic-inverse-picker" class="btn btn-secondary saved-picker-trigger" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;" title="Agregar proposición atómica guardada">
+                Agregar Atómica
+              </button>
+              <button id="btn-randomize-inverse-vars" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">
+                Generar Atómicas Aleatorias
+              </button>
+            </div>
           </div>
 
           <div id="inverse-var-inputs-list" class="atomic-list">
@@ -271,9 +309,17 @@
         <div id="inverse-result-box" class="formula-display-box hidden">
           <div class="flex-between">
             <span class="form-label" style="color: var(--accent-emerald);">Proposición Molecular Reconstruida:</span>
-            <button id="btn-clear-inverse-result" class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" title="Limpiar resultado">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 3px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>Limpiar
-            </button>
+            <div class="flex gap-1">
+              <button id="btn-save-molecular-inverse" class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" title="Guardar proposición molecular con su FBF">
+                Guardar Molecular
+              </button>
+              <button id="btn-open-molecular-inverse-picker" class="btn btn-secondary saved-picker-trigger" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" title="Agregar proposición molecular guardada">
+                Agregar Molecular
+              </button>
+              <button id="btn-clear-inverse-result" class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" title="Limpiar resultado">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 3px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>Limpiar
+              </button>
+            </div>
           </div>
           <p id="inverse-result-sentence" class="sentence-display-text" style="font-size: 1.2rem;">--</p>
           <div class="flex gap-1 mt-2">

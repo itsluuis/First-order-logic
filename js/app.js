@@ -16,6 +16,8 @@ import { PracticeEngine } from './practice/practiceEngine.js';
 import { PracticeView } from './practice/practiceView.js';
 import { studentModel } from './ml/studentModel.js';
 import { ICONS } from './icons.js';
+import { savedItemsStorage, SAVED_LIMITS } from './savedItemsStorage.js';
+import { savedItemsPopover } from './savedItemsPopover.js';
 
 // Estado global de la aplicación
 const AppState = {
@@ -1943,6 +1945,453 @@ function renderStudentTasks(section, studentId) {
 }
 
 // =============================================================================
+// GESTIÓN DE ELEMENTOS LÓGICOS GUARDADOS (ATÓMICAS, FBF Y MOLECULARES)
+// =============================================================================
+function getActiveUserId() {
+  return AppState.currentUser?.id || dbService.getCurrentSession()?.userId || 'default_user';
+}
+
+function fbfStringToBuilderTokens(formulaStr) {
+  try {
+    const astTokens = FBFParser.tokenize(formulaStr);
+    const builderTokens = [];
+    astTokens.forEach(t => {
+      if (t.type === 'LPAREN' || t.type === 'RPAREN') {
+        builderTokens.push({ type: 'paren', value: t.value });
+      } else if (t.type === 'OP' || t.type === 'NOT') {
+        builderTokens.push({ type: 'op', value: t.op });
+      } else if (t.type === 'VAR') {
+        builderTokens.push({ type: 'var', value: t.value.toLowerCase() });
+      }
+    });
+    return builderTokens;
+  } catch (e) {
+    console.error('Error al tokenizar fórmula:', e);
+    return [];
+  }
+}
+
+function ensureBuilderAtomicsExist(varNames = []) {
+  let changed = false;
+  varNames.forEach(v => {
+    const lower = v.toLowerCase();
+    const exists = AppState.builderAtomics.some(a => a.name === lower);
+    if (!exists) {
+      AppState.builderAtomics.push({ name: lower, text: '' });
+      changed = true;
+    }
+  });
+  if (changed) {
+    renderAtomicDefinitions();
+  }
+}
+
+function ensureBuilderAtomicLetter(targetLetter) {
+  const alphabet = ['p', 'q', 'r', 's', 't'];
+  const targetIdx = alphabet.indexOf(targetLetter.toLowerCase());
+  if (targetIdx === -1) return;
+
+  let changed = false;
+  for (let i = 0; i <= targetIdx; i++) {
+    const letter = alphabet[i];
+    if (!AppState.builderAtomics.some(a => a.name === letter)) {
+      AppState.builderAtomics.push({ name: letter, text: '' });
+      changed = true;
+    }
+  }
+  if (changed) {
+    renderAtomicDefinitions();
+  }
+}
+
+async function handleQuotaFullCTA(category, anchorEl) {
+  const max = SAVED_LIMITS[category] || 15;
+  const catNames = {
+    atomics: 'proposiciones atómicas',
+    fbf: 'fórmulas bien formadas (FBF)',
+    molecules: 'proposiciones moleculares'
+  };
+  const name = catNames[category] || category;
+
+  // Paso 1: Aviso explícito inmediato
+  showToast(`Límite alcanzado: Ya tienes el máximo permitido de ${max} ${name} guardadas.`, 'warning');
+
+  // Paso 2: Call to Action interactivo en diálogo NeoPop
+  const wantManage = await showConfirmDialog({
+    title: 'Capacidad Máxima Alcanzada',
+    message: `Has alcanzado el límite de ${max} ${name}. ¿Deseas revisar tu lista y eliminar alguna para hacer espacio?`,
+    confirmText: 'Gestionar Guardados',
+    cancelText: 'Cerrar',
+    danger: false
+  });
+
+  if (wantManage && anchorEl) {
+    openSavedItemsPicker(category, anchorEl);
+  }
+}
+
+function openSavedItemsPicker(category, anchorEl) {
+  const userId = getActiveUserId();
+  const items = savedItemsStorage.getItems(userId, category);
+  const quotaInfo = savedItemsStorage.getQuotaInfo(userId, category);
+
+  const titles = {
+    atomics: 'Proposiciones Atómicas Guardadas',
+    fbf: 'Fórmulas Bien Formadas (FBF)',
+    molecules: 'Proposiciones Moleculares Guardadas'
+  };
+
+  savedItemsPopover.open({
+    anchorEl,
+    category,
+    title: titles[category] || 'Elementos Guardados',
+    items,
+    quotaInfo,
+    onInsertDirect: (item) => handleInsertDirect(category, item),
+    onInsertAt: category === 'atomics' ? (item, varLetter) => handleInsertAt(item, varLetter) : undefined,
+    onDelete: (item) => {
+      savedItemsStorage.deleteItem(userId, category, item.id);
+      showToast('Elemento eliminado del banco de guardados.', 'info');
+      openSavedItemsPicker(category, anchorEl);
+    }
+  });
+}
+
+function handleInsertDirect(category, item) {
+  if (category === 'atomics') {
+    // Si estamos en la pestaña de Proceso Inverso
+    if (AppState.activeTab === 'tab-inverse') {
+      if (!AppState.inverseVars || AppState.inverseVars.length === 0) {
+        showToast('Primero analiza una FBF en el proceso inverso para detectar variables.', 'info');
+        return;
+      }
+      // Buscar primera variable vacía o con placeholder
+      const emptyVar = AppState.inverseVars.find(v => {
+        const val = AppState.inverseVarMap[v];
+        return !val || val.startsWith('[proposición') || !val.trim();
+      });
+
+      const targetVar = emptyVar || AppState.inverseVars[0];
+      const input = document.getElementById(`inverse-var-input-${targetVar}`);
+      if (input) input.value = item.text;
+      AppState.inverseVarMap[targetVar] = item.text;
+      document.getElementById('btn-generate-inverse-sentence')?.click();
+      showToast(`Proposición asignada a la variable ${targetVar}: "${item.text}"`, 'success');
+      return;
+    }
+
+    // En Constructor Visual: Buscar primer espacio libre en builderAtomics
+    const emptyAtomic = AppState.builderAtomics.find(a => !a.text || !a.text.trim());
+    if (emptyAtomic) {
+      emptyAtomic.text = item.text;
+      const input = document.getElementById(`atomic-input-${emptyAtomic.name}`);
+      if (input) input.value = item.text;
+      updateBuilderDisplay();
+      showToast(`Proposición asignada a ${emptyAtomic.name}: "${item.text}"`, 'success');
+      return;
+    }
+
+    // Si todas tienen texto, buscar la siguiente variable libre (p, q, r, s, t)
+    const alphabet = ['p', 'q', 'r', 's', 't'];
+    const activeNames = AppState.builderAtomics.map(a => a.name);
+    const nextLetter = alphabet.find(l => !activeNames.includes(l));
+
+    if (nextLetter) {
+      AppState.builderAtomics.push({ name: nextLetter, text: item.text });
+      renderAtomicDefinitions();
+      updateBuilderDisplay();
+      showToast(`Nueva variable ${nextLetter} agregada con: "${item.text}"`, 'success');
+    } else {
+      // Si ya están las 5 ocupadas, actualizar la primera
+      AppState.builderAtomics[0].text = item.text;
+      const input = document.getElementById('atomic-input-p');
+      if (input) input.value = item.text;
+      updateBuilderDisplay();
+      showToast(`Variable p actualizada con: "${item.text}"`, 'success');
+    }
+  } else if (category === 'fbf') {
+    if (AppState.activeTab === 'tab-inverse') {
+      const input = document.getElementById('inverse-fbf-input');
+      if (input) {
+        input.value = item.formula;
+        document.getElementById('btn-parse-inverse')?.click();
+        showToast(`FBF cargada en Proceso Inverso: ${item.formula}`, 'success');
+      }
+    } else {
+      try {
+        const ast = FBFParser.parse(item.formula);
+        const vars = FBFParser.getVariables(ast);
+        ensureBuilderAtomicsExist(vars);
+        AppState.builderTokens = fbfStringToBuilderTokens(item.formula);
+        updateBuilderDisplay();
+        showToast(`FBF cargada en el lienzo: ${item.formula}`, 'success');
+      } catch (err) {
+        showToast(`Error al interpretar la FBF guardada: ${err.message}`, 'error');
+      }
+    }
+  } else if (category === 'molecules') {
+    if (AppState.activeTab === 'tab-inverse') {
+      const input = document.getElementById('inverse-fbf-input');
+      if (input) {
+        input.value = item.fbf;
+        document.getElementById('btn-parse-inverse')?.click();
+        showToast(`FBF de la molecular cargada para proceso inverso: ${item.fbf}`, 'success');
+      }
+    } else {
+      try {
+        const ast = FBFParser.parse(item.fbf);
+        const vars = FBFParser.getVariables(ast);
+        ensureBuilderAtomicsExist(vars);
+        AppState.builderTokens = fbfStringToBuilderTokens(item.fbf);
+        updateBuilderDisplay();
+        showToast('Proposición molecular cargada en el constructor.', 'success');
+      } catch (err) {
+        showToast(`Error al interpretar la FBF de la molecular: ${err.message}`, 'error');
+      }
+    }
+  }
+}
+
+function handleInsertAt(item, varLetter) {
+  if (AppState.activeTab === 'tab-inverse') {
+    if (!AppState.inverseVars.includes(varLetter)) {
+      showToast(`La FBF analizada actualmente no incluye la variable "${varLetter}".`, 'error');
+      return;
+    }
+    const input = document.getElementById(`inverse-var-input-${varLetter}`);
+    if (input) input.value = item.text;
+    AppState.inverseVarMap[varLetter] = item.text;
+    document.getElementById('btn-generate-inverse-sentence')?.click();
+    showToast(`Variable ${varLetter} asignada: "${item.text}"`, 'success');
+    return;
+  }
+
+  // Constructor Visual
+  ensureBuilderAtomicLetter(varLetter);
+  const target = AppState.builderAtomics.find(a => a.name === varLetter);
+  if (target) {
+    target.text = item.text;
+    const input = document.getElementById(`atomic-input-${varLetter}`);
+    if (input) input.value = item.text;
+    updateBuilderDisplay();
+    showToast(`Variable ${varLetter} asignada: "${item.text}"`, 'success');
+  }
+}
+
+function initSavedItemsFeature() {
+  // 1. CONSTRUCTOR VISUAL - Atómicas
+  document.getElementById('btn-save-atomic-builder')?.addEventListener('click', async (e) => {
+    const userId = getActiveUserId();
+    if (savedItemsStorage.isQuotaFull(userId, 'atomics')) {
+      await handleQuotaFullCTA('atomics', e.currentTarget);
+      return;
+    }
+
+    const validAtomics = AppState.builderAtomics.filter(a => (a.text || '').trim().length > 0);
+    if (validAtomics.length === 0) {
+      showToast('No hay enunciados escritos en las variables atómicas para guardar.', 'info');
+      return;
+    }
+
+    let saved = 0;
+    for (const at of validAtomics) {
+      if (savedItemsStorage.isQuotaFull(userId, 'atomics')) break;
+      const res = savedItemsStorage.saveItem(userId, 'atomics', { text: at.text.trim() });
+      if (res.success) saved++;
+    }
+
+    if (saved > 0) {
+      showToast(`Se guardaron ${saved} proposiciones atómicas en tu biblioteca.`, 'success');
+    } else {
+      showToast('No se pudieron guardar las atómicas (límite de cuota alcanzado).', 'warning');
+    }
+  });
+
+  document.getElementById('btn-open-atomic-builder-picker')?.addEventListener('click', (e) => {
+    openSavedItemsPicker('atomics', e.currentTarget);
+  });
+
+  // 2. CONSTRUCTOR VISUAL - FBF
+  document.getElementById('btn-save-fbf-builder')?.addEventListener('click', async (e) => {
+    const userId = getActiveUserId();
+    const formulaText = document.getElementById('builder-fbf-output')?.textContent.trim();
+
+    if (!formulaText || formulaText === '--') {
+      showToast('Construye primero una FBF en el lienzo antes de guardar.', 'error');
+      return;
+    }
+
+    try {
+      FBFParser.parse(formulaText);
+    } catch (err) {
+      showToast(`La fórmula actual no es sintácticamente válida: ${err.message}`, 'error');
+      return;
+    }
+
+    if (savedItemsStorage.isQuotaFull(userId, 'fbf')) {
+      await handleQuotaFullCTA('fbf', e.currentTarget);
+      return;
+    }
+
+    const res = savedItemsStorage.saveItem(userId, 'fbf', { formula: formulaText });
+    if (res.success) {
+      showToast(`FBF guardada correctamente: ${formulaText}`, 'success');
+    } else if (res.reason === 'quota_full') {
+      await handleQuotaFullCTA('fbf', e.currentTarget);
+    }
+  });
+
+  document.getElementById('btn-open-fbf-builder-picker')?.addEventListener('click', (e) => {
+    openSavedItemsPicker('fbf', e.currentTarget);
+  });
+
+  // 3. CONSTRUCTOR VISUAL - Proposición Molecular
+  document.getElementById('btn-save-molecular-builder')?.addEventListener('click', async (e) => {
+    const userId = getActiveUserId();
+    const fbfText = document.getElementById('builder-fbf-output')?.textContent.trim();
+    const sentenceText = document.getElementById('builder-sentence-output')?.textContent.trim();
+
+    if (!fbfText || fbfText === '--') {
+      showToast('Debes construir primero una FBF válida para guardar la proposición molecular.', 'error');
+      return;
+    }
+
+    if (!sentenceText || sentenceText.includes('Define las proposiciones')) {
+      showToast('Completa los enunciados atómicos para generar la oración molecular antes de guardar.', 'error');
+      return;
+    }
+
+    if (savedItemsStorage.isQuotaFull(userId, 'molecules')) {
+      await handleQuotaFullCTA('molecules', e.currentTarget);
+      return;
+    }
+
+    const res = savedItemsStorage.saveItem(userId, 'molecules', { sentence: sentenceText, fbf: fbfText });
+    if (res.success) {
+      showToast('Proposición molecular guardada con éxito.', 'success');
+    } else if (res.reason === 'quota_full') {
+      await handleQuotaFullCTA('molecules', e.currentTarget);
+    }
+  });
+
+  document.getElementById('btn-open-molecular-builder-picker')?.addEventListener('click', (e) => {
+    openSavedItemsPicker('molecules', e.currentTarget);
+  });
+
+  // 4. PROCESO INVERSO - FBF
+  document.getElementById('btn-save-fbf-inverse')?.addEventListener('click', async (e) => {
+    const userId = getActiveUserId();
+    const formulaText = document.getElementById('inverse-fbf-input')?.value.trim();
+
+    if (!formulaText) {
+      showToast('Introduce primero una FBF para guardar.', 'error');
+      return;
+    }
+
+    try {
+      FBFParser.parse(formulaText);
+    } catch (err) {
+      showToast(`La fórmula introducida no es válida: ${err.message}`, 'error');
+      return;
+    }
+
+    if (savedItemsStorage.isQuotaFull(userId, 'fbf')) {
+      await handleQuotaFullCTA('fbf', e.currentTarget);
+      return;
+    }
+
+    const res = savedItemsStorage.saveItem(userId, 'fbf', { formula: formulaText });
+    if (res.success) {
+      showToast(`FBF guardada correctamente: ${formulaText}`, 'success');
+    } else if (res.reason === 'quota_full') {
+      await handleQuotaFullCTA('fbf', e.currentTarget);
+    }
+  });
+
+  document.getElementById('btn-open-fbf-inverse-picker')?.addEventListener('click', (e) => {
+    openSavedItemsPicker('fbf', e.currentTarget);
+  });
+
+  // 5. PROCESO INVERSO - Atómicas
+  document.getElementById('btn-save-atomic-inverse')?.addEventListener('click', async (e) => {
+    const userId = getActiveUserId();
+    if (savedItemsStorage.isQuotaFull(userId, 'atomics')) {
+      await handleQuotaFullCTA('atomics', e.currentTarget);
+      return;
+    }
+
+    if (!AppState.inverseVars || AppState.inverseVars.length === 0) {
+      showToast('No hay variables detectadas en el proceso inverso.', 'info');
+      return;
+    }
+
+    const validStatements = [];
+    AppState.inverseVars.forEach(v => {
+      const input = document.getElementById(`inverse-var-input-${v}`);
+      const val = input ? input.value.trim() : '';
+      if (val && !val.startsWith('[proposición')) {
+        validStatements.push(val);
+      }
+    });
+
+    if (validStatements.length === 0) {
+      showToast('No hay enunciados asignados a las variables para guardar.', 'info');
+      return;
+    }
+
+    let saved = 0;
+    for (const text of validStatements) {
+      if (savedItemsStorage.isQuotaFull(userId, 'atomics')) break;
+      const res = savedItemsStorage.saveItem(userId, 'atomics', { text });
+      if (res.success) saved++;
+    }
+
+    if (saved > 0) {
+      showToast(`Se guardaron ${saved} proposiciones atómicas en tu biblioteca.`, 'success');
+    } else {
+      showToast('No se pudieron guardar las atómicas (límite alcanzado).', 'warning');
+    }
+  });
+
+  document.getElementById('btn-open-atomic-inverse-picker')?.addEventListener('click', (e) => {
+    openSavedItemsPicker('atomics', e.currentTarget);
+  });
+
+  // 6. PROCESO INVERSO - Molecular Reconstruida
+  document.getElementById('btn-save-molecular-inverse')?.addEventListener('click', async (e) => {
+    const userId = getActiveUserId();
+    const sentenceText = document.getElementById('inverse-result-sentence')?.textContent.trim();
+    const fbfText = document.getElementById('inverse-fbf-input')?.value.trim();
+
+    if (!fbfText) {
+      showToast('Introduce y analiza una FBF válida antes de guardar la proposición molecular.', 'error');
+      return;
+    }
+
+    if (!sentenceText || sentenceText === '--' || sentenceText.includes('[proposición')) {
+      showToast('Reconstruye primero la proposición molecular en español antes de guardarla.', 'error');
+      return;
+    }
+
+    if (savedItemsStorage.isQuotaFull(userId, 'molecules')) {
+      await handleQuotaFullCTA('molecules', e.currentTarget);
+      return;
+    }
+
+    const res = savedItemsStorage.saveItem(userId, 'molecules', { sentence: sentenceText, fbf: fbfText });
+    if (res.success) {
+      showToast('Proposición molecular guardada con éxito.', 'success');
+    } else if (res.reason === 'quota_full') {
+      await handleQuotaFullCTA('molecules', e.currentTarget);
+    }
+  });
+
+  document.getElementById('btn-open-molecular-inverse-picker')?.addEventListener('click', (e) => {
+    openSavedItemsPicker('molecules', e.currentTarget);
+  });
+}
+
+// =============================================================================
 // INICIALIZACIÓN GLOBAL DE LA APLICACIÓN
 // =============================================================================
 document.addEventListener('DOMContentLoaded', () => {
@@ -1956,4 +2405,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initInverseProcess();
   initTruthTableAndTree();
   initPracticeAndMascot();
+  initSavedItemsFeature();
 });
+
