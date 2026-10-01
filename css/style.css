@@ -1475,18 +1475,18 @@ body {
 .saved-items-popover {
   position: fixed;
   z-index: 1000;
-  width: 350px;
+  width: 580px;
   max-width: calc(100vw - 24px);
   background: var(--bg-card);
   border: 2px solid var(--border-color);
   border-radius: var(--radius-md);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45), 0 4px 0 var(--border-3d-shadow);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 4px 0 var(--border-3d-shadow);
   animation: popIn 0.15s ease-out;
   overflow: hidden;
 }
 
 .saved-popover-header {
-  padding: 0.6rem 0.8rem;
+  padding: 0.75rem 1rem;
   background: var(--bg-subtle);
   border-bottom: 2px solid var(--border-color);
   display: flex;
@@ -1498,9 +1498,9 @@ body {
 .saved-popover-title-row {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: 0.92rem;
   color: var(--text-primary);
   overflow: hidden;
 }
@@ -1521,43 +1521,43 @@ body {
 .saved-popover-header-actions {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   flex-shrink: 0;
 }
 
 .saved-popover-quota {
   background: var(--bg-card);
   border: 1.5px solid var(--border-color);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--pop-blue);
-  padding: 0.15rem 0.45rem;
+  padding: 0.2rem 0.55rem;
   border-radius: var(--radius-full);
 }
 
 .saved-items-list {
-  max-height: 280px;
+  max-height: 400px;
   overflow-y: auto;
-  padding: 0.45rem;
+  padding: 0.65rem;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.5rem;
 }
 
 .saved-popover-empty {
-  padding: 1.25rem 0.75rem;
+  padding: 1.75rem 1rem;
   text-align: center;
 }
 
 .saved-item-row {
-  padding: 0.45rem 0.6rem;
+  padding: 0.65rem 0.85rem;
   background: var(--bg-subtle);
   border: 1.5px solid var(--border-color);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.75rem;
   transition: all var(--transition-fast);
 }
 
@@ -1567,40 +1567,48 @@ body {
 }
 
 .saved-item-text {
-  font-size: 0.85rem;
+  font-size: 0.92rem;
   color: var(--text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 175px;
+  word-break: break-word;
+  line-height: 1.45;
   flex-grow: 1;
+  min-width: 0;
 }
 
 .saved-item-molecule-col {
   display: flex;
   flex-direction: column;
+  gap: 0.25rem;
   overflow: hidden;
-  max-width: 175px;
   flex-grow: 1;
+  min-width: 0;
 }
 
 .saved-item-actions {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.4rem;
   flex-shrink: 0;
 }
 
+.saved-select-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
 .btn-xs {
-  padding: 0.2rem 0.5rem;
-  font-size: 0.75rem;
-  line-height: 1.2;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.78rem;
+  line-height: 1.25;
 }
 
 .saved-item-var-pills {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
 }
 
 .btn-var-pill {
@@ -1608,9 +1616,9 @@ body {
   background: var(--bg-card);
   color: var(--text-primary);
   border-radius: 4px;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  padding: 0.15rem 0.35rem;
+  padding: 0.18rem 0.4rem;
   cursor: pointer;
   transition: all 0.1s ease;
   font-family: var(--font-mono);

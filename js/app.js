@@ -2187,24 +2187,33 @@ function initSavedItemsFeature() {
       return;
     }
 
-    const validAtomics = AppState.builderAtomics.filter(a => (a.text || '').trim().length > 0);
+    const validAtomics = AppState.builderAtomics
+      .filter(a => (a.text || '').trim().length > 0)
+      .map(a => ({ letter: a.name, text: a.text.trim() }));
+
     if (validAtomics.length === 0) {
       showToast('No hay enunciados escritos en las variables atómicas para guardar.', 'info');
       return;
     }
 
-    let saved = 0;
-    for (const at of validAtomics) {
-      if (savedItemsStorage.isQuotaFull(userId, 'atomics')) break;
-      const res = savedItemsStorage.saveItem(userId, 'atomics', { text: at.text.trim() });
-      if (res.success) saved++;
-    }
-
-    if (saved > 0) {
-      showToast(`Se guardaron ${saved} proposiciones atómicas en tu biblioteca.`, 'success');
-    } else {
-      showToast('No se pudieron guardar las atómicas (límite de cuota alcanzado).', 'warning');
-    }
+    // Solicita al usuario seleccionar qué letra/proposición atómica desea guardar
+    savedItemsPopover.openSaveSelector({
+      anchorEl: e.currentTarget,
+      title: 'Seleccionar Atómica a Guardar',
+      options: validAtomics,
+      onSelect: (chosen) => {
+        if (savedItemsStorage.isQuotaFull(userId, 'atomics')) {
+          handleQuotaFullCTA('atomics', e.currentTarget);
+          return;
+        }
+        const res = savedItemsStorage.saveItem(userId, 'atomics', { text: chosen.text });
+        if (res.success) {
+          showToast(`Proposición de la variable ${chosen.letter} guardada con éxito.`, 'success');
+        } else if (res.reason === 'quota_full') {
+          handleQuotaFullCTA('atomics', e.currentTarget);
+        }
+      }
+    });
   });
 
   document.getElementById('btn-open-atomic-builder-picker')?.addEventListener('click', (e) => {
@@ -2339,18 +2348,24 @@ function initSavedItemsFeature() {
       return;
     }
 
-    let saved = 0;
-    for (const text of validStatements) {
-      if (savedItemsStorage.isQuotaFull(userId, 'atomics')) break;
-      const res = savedItemsStorage.saveItem(userId, 'atomics', { text });
-      if (res.success) saved++;
-    }
-
-    if (saved > 0) {
-      showToast(`Se guardaron ${saved} proposiciones atómicas en tu biblioteca.`, 'success');
-    } else {
-      showToast('No se pudieron guardar las atómicas (límite alcanzado).', 'warning');
-    }
+    // Solicita al usuario seleccionar qué letra/proposición atómica desea guardar
+    savedItemsPopover.openSaveSelector({
+      anchorEl: e.currentTarget,
+      title: 'Seleccionar Atómica a Guardar',
+      options: validStatements,
+      onSelect: (chosen) => {
+        if (savedItemsStorage.isQuotaFull(userId, 'atomics')) {
+          handleQuotaFullCTA('atomics', e.currentTarget);
+          return;
+        }
+        const res = savedItemsStorage.saveItem(userId, 'atomics', { text: chosen.text });
+        if (res.success) {
+          showToast(`Proposición de la variable ${chosen.letter} guardada con éxito.`, 'success');
+        } else if (res.reason === 'quota_full') {
+          handleQuotaFullCTA('atomics', e.currentTarget);
+        }
+      }
+    });
   });
 
   document.getElementById('btn-open-atomic-inverse-picker')?.addEventListener('click', (e) => {

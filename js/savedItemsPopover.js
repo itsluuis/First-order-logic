@@ -159,6 +159,82 @@ export class SavedItemsPopover {
   }
 
   /**
+   * Abre un popover para seleccionar cual letra/proposicion atomica se desea guardar
+   */
+  openSaveSelector({ anchorEl, title = 'Seleccionar Proposicion a Guardar', options = [], onSelect }) {
+    this.close();
+
+    if (!anchorEl) return;
+
+    const popover = document.createElement('div');
+    popover.className = 'saved-items-popover neo-popover';
+    popover.setAttribute('role', 'dialog');
+    popover.setAttribute('aria-label', title);
+
+    const header = document.createElement('div');
+    header.className = 'saved-popover-header';
+    header.innerHTML = `
+      <div class="saved-popover-title-row">
+        <span class="saved-popover-icon">${ICONS.save}</span>
+        <span class="saved-popover-title">${this.escapeHtml(title)}</span>
+      </div>
+      <div class="saved-popover-header-actions">
+        <button class="btn-clear-inline btn-close-popover" title="Cerrar ventana">${ICONS.close}</button>
+      </div>
+    `;
+    popover.appendChild(header);
+
+    const list = document.createElement('div');
+    list.className = 'saved-items-list';
+
+    if (options.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'saved-popover-empty';
+      empty.innerHTML = `
+        <p class="text-muted" style="margin: 0; font-size: 0.85rem;">
+          No hay enunciados escritos para guardar.
+        </p>
+      `;
+      list.appendChild(empty);
+    } else {
+      options.forEach(opt => {
+        const row = document.createElement('div');
+        row.className = 'saved-item-row saved-select-row';
+        row.innerHTML = `
+          <div class="saved-select-content">
+            <span class="atomic-var-badge">${this.escapeHtml(opt.letter)}</span>
+            <span class="saved-item-text" title="${this.escapeHtml(opt.text)}">"${this.escapeHtml(opt.text)}"</span>
+          </div>
+          <button class="btn btn-xs btn-primary btn-save-chosen" title="Guardar proposicion de ${this.escapeHtml(opt.letter)}">
+            Guardar
+          </button>
+        `;
+
+        row.querySelector('.btn-save-chosen')?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.close();
+          if (onSelect) onSelect(opt);
+        });
+
+        list.appendChild(row);
+      });
+    }
+
+    popover.appendChild(list);
+    document.body.appendChild(popover);
+    this.activePopover = popover;
+
+    this.positionPopover(anchorEl, popover);
+
+    popover.querySelector('.btn-close-popover')?.addEventListener('click', () => this.close());
+
+    setTimeout(() => {
+      document.addEventListener('click', this.handleOutsideClick);
+      document.addEventListener('keydown', this.handleKeyDown);
+    }, 10);
+  }
+
+  /**
    * Calcula coordenadas para anclar el popover al elemento disparador
    */
   positionPopover(anchorEl, popover) {
