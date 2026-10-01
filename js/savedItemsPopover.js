@@ -5,6 +5,7 @@
  */
 
 import { ICONS } from './icons.js';
+import { triggerSuccessFeedback } from './feedbackEffects.js';
 
 export class SavedItemsPopover {
   constructor() {
@@ -113,8 +114,11 @@ export class SavedItemsPopover {
         if (btnInsertDirect && onInsertDirect) {
           btnInsertDirect.addEventListener('click', (e) => {
             e.stopPropagation();
-            onInsertDirect(item);
-            this.close();
+            triggerSuccessFeedback(row);
+            setTimeout(() => {
+              onInsertDirect(item);
+              this.close();
+            }, 120);
           });
         }
 
@@ -122,10 +126,13 @@ export class SavedItemsPopover {
           pill.addEventListener('click', (e) => {
             e.stopPropagation();
             const varLetter = pill.getAttribute('data-var');
-            if (onInsertAt) {
-              onInsertAt(item, varLetter);
-              this.close();
-            }
+            triggerSuccessFeedback(pill);
+            setTimeout(() => {
+              if (onInsertAt) {
+                onInsertAt(item, varLetter);
+                this.close();
+              }
+            }, 120);
           });
         });
 
@@ -212,8 +219,11 @@ export class SavedItemsPopover {
 
         row.querySelector('.btn-save-chosen')?.addEventListener('click', (e) => {
           e.stopPropagation();
-          this.close();
-          if (onSelect) onSelect(opt);
+          triggerSuccessFeedback(row);
+          setTimeout(() => {
+            this.close();
+            if (onSelect) onSelect(opt);
+          }, 120);
         });
 
         list.appendChild(row);

@@ -66,6 +66,7 @@ describe('Saved Items Integration & Quality Policy', () => {
     const targetFiles = [
       'js/savedItemsStorage.js',
       'js/savedItemsPopover.js',
+      'js/feedbackEffects.js',
       'js/app.js',
       'css/style.css',
       'index.html'

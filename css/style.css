@@ -1629,3 +1629,38 @@ body {
   color: var(--pop-blue);
   transform: translateY(-1px);
 }
+
+/* ==========================================================================
+   FEEDBACK VISUAL & PARTICULAS DUOLINGO (ACCIONES GUARDAR / AGREGAR)
+   ========================================================================== */
+.action-success-flash {
+  background-color: #58CC02 !important;
+  border-color: #46A302 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 0 18px rgba(88, 204, 2, 0.75), 0 4px 0 #3b8802 !important;
+  transform: scale(1.025);
+  transition: none !important;
+}
+
+.action-success-fadeout {
+  transition: background-color 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              color 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes duolingoParticleFly {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  60% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(var(--tx, 0px), var(--ty, -35px)) scale(0) rotate(var(--rot, 90deg));
+    opacity: 0;
+  }
+}
+
