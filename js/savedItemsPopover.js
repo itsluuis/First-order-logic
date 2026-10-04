@@ -114,7 +114,7 @@ export class SavedItemsPopover {
         if (btnInsertDirect && onInsertDirect) {
           btnInsertDirect.addEventListener('click', (e) => {
             e.stopPropagation();
-            triggerSuccessFeedback(row);
+            triggerSuccessFeedback(e.currentTarget);
             setTimeout(() => {
               onInsertDirect(item);
               this.close();
@@ -219,7 +219,7 @@ export class SavedItemsPopover {
 
         row.querySelector('.btn-save-chosen')?.addEventListener('click', (e) => {
           e.stopPropagation();
-          triggerSuccessFeedback(row);
+          triggerSuccessFeedback(e.currentTarget);
           setTimeout(() => {
             this.close();
             if (onSelect) onSelect(opt);

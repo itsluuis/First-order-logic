@@ -1643,11 +1643,11 @@ body {
 }
 
 .action-success-fadeout {
-  transition: background-color 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-              color 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: background-color 1s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 1s cubic-bezier(0.16, 1, 0.3, 1),
+              color 1s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 1s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 1s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 @keyframes duolingoParticleFly {

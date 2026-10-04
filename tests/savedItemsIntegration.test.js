@@ -135,4 +135,40 @@ describe('Saved Items Integration & Quality Policy', () => {
     const reAdd = savedItemsStorage.saveItem(userId, 'fbf', { formula: 'r ∨ s' });
     assert.equal(reAdd.success, true);
   });
+
+  it('Verifies flash feedback duration is 1 second and only buttons flash on save or add', () => {
+    const cssPath = path.resolve('css/style.css');
+    const css = fs.readFileSync(cssPath, 'utf-8');
+    assert.match(
+      css,
+      /\.action-success-fadeout\s*\{[^}]*transition:[^}]*1s/s,
+      'css/style.css .action-success-fadeout must have 1s transition duration'
+    );
+    assert.doesNotMatch(
+      css,
+      /\.action-success-fadeout\s*\{[^}]*0\.8s/s,
+      'css/style.css .action-success-fadeout must not use 0.8s transition'
+    );
+
+    const appJsPath = path.resolve('js/app.js');
+    const appJs = fs.readFileSync(appJsPath, 'utf-8');
+
+    // Ensure no inputs, canvas, outputs are targeted by triggerSuccessFeedback in app.js
+    assert.doesNotMatch(
+      appJs,
+      /triggerSuccessFeedback\s*\(\s*(input|inp|outputEl|sentenceEl|inverseInp|atomicInp|document\.getElementById\(['"]builder-canvas['"]\))\s*\)/,
+      'js/app.js must not trigger flash feedback on inputs, outputs, or canvas elements'
+    );
+
+    const popoverJsPath = path.resolve('js/savedItemsPopover.js');
+    const popoverJs = fs.readFileSync(popoverJsPath, 'utf-8');
+
+    // Ensure rows are not targeted in savedItemsPopover.js
+    assert.doesNotMatch(
+      popoverJs,
+      /triggerSuccessFeedback\s*\(\s*row\s*\)/,
+      'js/savedItemsPopover.js must not trigger flash feedback on entire rows'
+    );
+  });
 });
+

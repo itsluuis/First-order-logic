@@ -1,6 +1,6 @@
 /**
  * feedbackEffects.js - Microinteracciones Neo-Pop estilo Duolingo
- * Proporciona destellos verdes con fade out de 0.8s y rafagas de particulas
+ * Proporciona destellos verdes con fade out de 1s y rafagas de particulas
  * geometricas ascendentes al guardar o agregar elementos logicos (cero emojis).
  */
 
@@ -77,7 +77,7 @@ export function spawnDuolingoParticles(targetEl) {
 }
 
 /**
- * Pinta de verde el elemento y vuelve a su color normal en un fade out suave de 0.8s
+ * Pinta de verde el elemento y vuelve a su color normal en un fade out suave de 1s
  */
 export function triggerSuccessFeedback(targetEl) {
   if (!targetEl || !(targetEl instanceof HTMLElement)) return;
@@ -89,7 +89,7 @@ export function triggerSuccessFeedback(targetEl) {
   targetEl.classList.remove('action-success-fadeout');
   targetEl.classList.add('action-success-flash');
 
-  // 3. Al siguiente frame, iniciar la transicion suave de vuelta en 0.8 segundos
+  // 3. Al siguiente frame, iniciar la transicion suave de vuelta en 1 segundo
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       targetEl.classList.remove('action-success-flash');
@@ -97,7 +97,7 @@ export function triggerSuccessFeedback(targetEl) {
 
       setTimeout(() => {
         targetEl.classList.remove('action-success-fadeout');
-      }, 820);
+      }, 1020);
     });
   });
 }

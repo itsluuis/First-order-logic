@@ -933,7 +933,7 @@ function initVisualBuilder() {
   renderAtomicDefinitions();
 
   // Botón para añadir nueva variable atómica
-  document.getElementById('btn-add-atomic')?.addEventListener('click', () => {
+  document.getElementById('btn-add-atomic')?.addEventListener('click', (e) => {
     const letters = ['p', 'q', 'r', 's', 't', 'u', 'w', 'x', 'y', 'z'];
     const used = AppState.builderAtomics.map(a => a.name);
     const nextLetter = letters.find(l => !used.includes(l));
@@ -949,6 +949,7 @@ function initVisualBuilder() {
     });
 
     renderAtomicDefinitions();
+    triggerSuccessFeedback(e.currentTarget);
     showToast(`Variable [${nextLetter}] añadida exitosamente.`, 'info');
   });
 
@@ -2076,7 +2077,6 @@ function handleInsertDirect(category, item) {
       const input = document.getElementById(`inverse-var-input-${targetVar}`);
       if (input) {
         input.value = item.text;
-        triggerSuccessFeedback(input);
       }
       triggerSuccessFeedback(document.getElementById('btn-open-atomic-inverse-picker'));
       AppState.inverseVarMap[targetVar] = item.text;
@@ -2092,7 +2092,6 @@ function handleInsertDirect(category, item) {
       const input = document.getElementById(`atomic-input-${emptyAtomic.name}`);
       if (input) {
         input.value = item.text;
-        triggerSuccessFeedback(input);
       }
       triggerSuccessFeedback(document.getElementById('btn-open-atomic-builder-picker'));
       updateBuilderDisplay();
@@ -2110,10 +2109,6 @@ function handleInsertDirect(category, item) {
       renderAtomicDefinitions();
       updateBuilderDisplay();
       triggerSuccessFeedback(document.getElementById('btn-open-atomic-builder-picker'));
-      setTimeout(() => {
-        const inp = document.getElementById(`atomic-input-${nextLetter}`);
-        if (inp) triggerSuccessFeedback(inp);
-      }, 50);
       showToast(`Nueva variable ${nextLetter} agregada con: "${item.text}"`, 'success');
     } else {
       // Si ya están las 5 ocupadas, actualizar la primera
@@ -2121,7 +2116,6 @@ function handleInsertDirect(category, item) {
       const input = document.getElementById('atomic-input-p');
       if (input) {
         input.value = item.text;
-        triggerSuccessFeedback(input);
       }
       triggerSuccessFeedback(document.getElementById('btn-open-atomic-builder-picker'));
       updateBuilderDisplay();
@@ -2132,7 +2126,6 @@ function handleInsertDirect(category, item) {
       const input = document.getElementById('inverse-fbf-input');
       if (input) {
         input.value = item.formula;
-        triggerSuccessFeedback(input);
         triggerSuccessFeedback(document.getElementById('btn-open-fbf-inverse-picker'));
         document.getElementById('btn-parse-inverse')?.click();
         showToast(`FBF cargada en Proceso Inverso: ${item.formula}`, 'success');
@@ -2144,7 +2137,6 @@ function handleInsertDirect(category, item) {
         ensureBuilderAtomicsExist(vars);
         AppState.builderTokens = fbfStringToBuilderTokens(item.formula);
         updateBuilderDisplay();
-        triggerSuccessFeedback(document.getElementById('builder-canvas'));
         triggerSuccessFeedback(document.getElementById('btn-open-fbf-builder-picker'));
         showToast(`FBF cargada en el lienzo: ${item.formula}`, 'success');
       } catch (err) {
@@ -2156,7 +2148,6 @@ function handleInsertDirect(category, item) {
       const input = document.getElementById('inverse-fbf-input');
       if (input) {
         input.value = item.fbf;
-        triggerSuccessFeedback(input);
         triggerSuccessFeedback(document.getElementById('btn-open-molecular-inverse-picker'));
         document.getElementById('btn-parse-inverse')?.click();
         showToast(`FBF de la molecular cargada para proceso inverso: ${item.fbf}`, 'success');
@@ -2168,7 +2159,6 @@ function handleInsertDirect(category, item) {
         ensureBuilderAtomicsExist(vars);
         AppState.builderTokens = fbfStringToBuilderTokens(item.fbf);
         updateBuilderDisplay();
-        triggerSuccessFeedback(document.getElementById('builder-canvas'));
         triggerSuccessFeedback(document.getElementById('btn-open-molecular-builder-picker'));
         showToast('Proposición molecular cargada en el constructor.', 'success');
       } catch (err) {
@@ -2187,7 +2177,6 @@ function handleInsertAt(item, varLetter) {
     const input = document.getElementById(`inverse-var-input-${varLetter}`);
     if (input) {
       input.value = item.text;
-      triggerSuccessFeedback(input);
     }
     triggerSuccessFeedback(document.getElementById('btn-open-atomic-inverse-picker'));
     AppState.inverseVarMap[varLetter] = item.text;
@@ -2204,7 +2193,6 @@ function handleInsertAt(item, varLetter) {
     const input = document.getElementById(`atomic-input-${varLetter}`);
     if (input) {
       input.value = item.text;
-      triggerSuccessFeedback(input);
     }
     triggerSuccessFeedback(document.getElementById('btn-open-atomic-builder-picker'));
     updateBuilderDisplay();
@@ -2243,8 +2231,6 @@ function initSavedItemsFeature() {
         const res = savedItemsStorage.saveItem(userId, 'atomics', { text: chosen.text });
         if (res.success) {
           triggerSuccessFeedback(document.getElementById('btn-save-atomic-builder'));
-          const atomicInp = document.getElementById(`atomic-input-${chosen.letter}`);
-          if (atomicInp) triggerSuccessFeedback(atomicInp);
           showToast(`Proposición de la variable ${chosen.letter} guardada con éxito.`, 'success');
         } else if (res.reason === 'quota_full') {
           handleQuotaFullCTA('atomics', e.currentTarget);
@@ -2282,8 +2268,6 @@ function initSavedItemsFeature() {
     const res = savedItemsStorage.saveItem(userId, 'fbf', { formula: formulaText });
     if (res.success) {
       triggerSuccessFeedback(e.currentTarget);
-      const outputEl = document.getElementById('builder-fbf-output');
-      if (outputEl) triggerSuccessFeedback(outputEl);
       showToast(`FBF guardada correctamente: ${formulaText}`, 'success');
     } else if (res.reason === 'quota_full') {
       await handleQuotaFullCTA('fbf', e.currentTarget);
@@ -2318,8 +2302,6 @@ function initSavedItemsFeature() {
     const res = savedItemsStorage.saveItem(userId, 'molecules', { sentence: sentenceText, fbf: fbfText });
     if (res.success) {
       triggerSuccessFeedback(e.currentTarget);
-      const sentenceEl = document.getElementById('builder-sentence-output');
-      if (sentenceEl) triggerSuccessFeedback(sentenceEl);
       showToast('Proposición molecular guardada con éxito.', 'success');
     } else if (res.reason === 'quota_full') {
       await handleQuotaFullCTA('molecules', e.currentTarget);
@@ -2355,8 +2337,6 @@ function initSavedItemsFeature() {
     const res = savedItemsStorage.saveItem(userId, 'fbf', { formula: formulaText });
     if (res.success) {
       triggerSuccessFeedback(e.currentTarget);
-      const inputEl = document.getElementById('inverse-fbf-input');
-      if (inputEl) triggerSuccessFeedback(inputEl);
       showToast(`FBF guardada correctamente: ${formulaText}`, 'success');
     } else if (res.reason === 'quota_full') {
       await handleQuotaFullCTA('fbf', e.currentTarget);
@@ -2407,8 +2387,6 @@ function initSavedItemsFeature() {
         const res = savedItemsStorage.saveItem(userId, 'atomics', { text: chosen.text });
         if (res.success) {
           triggerSuccessFeedback(document.getElementById('btn-save-atomic-inverse'));
-          const inverseInp = document.getElementById(`inverse-var-input-${chosen.letter}`);
-          if (inverseInp) triggerSuccessFeedback(inverseInp);
           showToast(`Proposición de la variable ${chosen.letter} guardada con éxito.`, 'success');
         } else if (res.reason === 'quota_full') {
           handleQuotaFullCTA('atomics', e.currentTarget);
@@ -2445,8 +2423,6 @@ function initSavedItemsFeature() {
     const res = savedItemsStorage.saveItem(userId, 'molecules', { sentence: sentenceText, fbf: fbfText });
     if (res.success) {
       triggerSuccessFeedback(e.currentTarget);
-      const sentenceEl = document.getElementById('inverse-result-sentence');
-      if (sentenceEl) triggerSuccessFeedback(sentenceEl);
       showToast('Proposición molecular guardada con éxito.', 'success');
     } else if (res.reason === 'quota_full') {
       await handleQuotaFullCTA('molecules', e.currentTarget);
