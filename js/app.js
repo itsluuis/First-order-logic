@@ -167,6 +167,18 @@ function updateNotationUI() {
     lockedBadge?.classList.add('hidden');
   }
 
+  // Actualizar indicadores visuales de notación en la barra superior y opciones
+  const notationBadge = document.getElementById('notation-indicator-badge');
+  if (notationBadge) {
+    notationBadge.textContent = AppState.currentNotation === 'alternative' ? 'Alternativa' : 'Estándar';
+  }
+  const optStd = document.getElementById('opt-notation-standard');
+  const optAlt = document.getElementById('opt-notation-alternative');
+  if (optStd && optAlt) {
+    optStd.classList.toggle('active', AppState.currentNotation === 'standard');
+    optAlt.classList.toggle('active', AppState.currentNotation === 'alternative');
+  }
+
   // Actualizar símbolos visuales en teclados
   const symbols = NOTATION_SYMBOLS[AppState.currentNotation];
   document.querySelectorAll('[data-sym]').forEach(el => {
@@ -195,6 +207,75 @@ function initNotationEvents() {
   notationSelect?.addEventListener('change', (e) => {
     AppState.currentNotation = e.target.value;
     updateNotationUI();
+  });
+
+  // Eventos para las opciones del popover de Notación
+  document.getElementById('opt-notation-standard')?.addEventListener('click', () => {
+    const settings = dbService.getSettings();
+    if (settings.forcedNotation && settings.forcedNotation !== 'none' && AppState.currentUser?.role !== 'admin') {
+      showToast('La notación está fijada por el Administrador.', 'warning');
+      return;
+    }
+    if (notationSelect) {
+      notationSelect.value = 'standard';
+      notationSelect.dispatchEvent(new Event('change'));
+    }
+    document.getElementById('popover-notation')?.classList.add('hidden');
+  });
+
+  document.getElementById('opt-notation-alternative')?.addEventListener('click', () => {
+    const settings = dbService.getSettings();
+    if (settings.forcedNotation && settings.forcedNotation !== 'none' && AppState.currentUser?.role !== 'admin') {
+      showToast('La notación está fijada por el Administrador.', 'warning');
+      return;
+    }
+    if (notationSelect) {
+      notationSelect.value = 'alternative';
+      notationSelect.dispatchEvent(new Event('change'));
+    }
+    document.getElementById('popover-notation')?.classList.add('hidden');
+  });
+}
+
+function initTopbarPopovers() {
+  const btnNotation = document.getElementById('btn-topbar-notation');
+  const popoverNotation = document.getElementById('popover-notation');
+  const btnUser = document.getElementById('btn-topbar-user');
+  const popoverUser = document.getElementById('popover-user');
+
+  btnNotation?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    popoverUser?.classList.add('hidden');
+    popoverNotation?.classList.toggle('hidden');
+  });
+
+  btnUser?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    popoverNotation?.classList.add('hidden');
+    popoverUser?.classList.toggle('hidden');
+  });
+
+  // Cerrar popovers al hacer click fuera
+  document.addEventListener('click', (e) => {
+    if (popoverNotation && !popoverNotation.contains(e.target) && !btnNotation?.contains(e.target)) {
+      popoverNotation.classList.add('hidden');
+    }
+    if (popoverUser && !popoverUser.contains(e.target) && !btnUser?.contains(e.target)) {
+      popoverUser.classList.add('hidden');
+    }
+  });
+
+  // Cerrar popovers al presionar la tecla Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      popoverNotation?.classList.add('hidden');
+      popoverUser?.classList.add('hidden');
+    }
+  });
+
+  // Al pulsar Cerrar Sesión en el popover
+  document.getElementById('btn-logout')?.addEventListener('click', () => {
+    popoverUser?.classList.add('hidden');
   });
 }
 
@@ -2618,6 +2699,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initAuth();
   initTabs();
   initNotationEvents();
+  initTopbarPopovers();
   initAdminEvents();
   initSectionsModule();
   initVisualBuilder();

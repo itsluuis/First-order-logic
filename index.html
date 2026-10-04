@@ -17,67 +17,82 @@
   </div>
 
   <div class="app-container">
-    <!-- Header Principal -->
-    <header class="app-header">
-      <div class="brand-section">
-        <div class="brand-icon">∧∨</div>
-        <div>
-          <h1 class="brand-title">Lógica Simbólica</h1>
-          <p class="brand-subtitle">Proposiciones Moleculares & Fórmulas Bien Formadas (FBF)</p>
+    <!-- Header Minimalista Neo-Pop -->
+    <header class="app-header-minimal">
+      <div class="topbar-left">
+        <div class="brand-icon-solid" title="Lógica Simbólica">∧∨</div>
+
+        <div class="topbar-links">
+          <!-- Menú interactivo de Notación -->
+          <div class="topbar-popover-wrapper">
+            <button type="button" class="topbar-link-btn" id="btn-topbar-notation" title="Configurar notación de conectivos">
+              <span>Notación</span>
+              <span id="notation-indicator-badge" class="topbar-badge">Estándar</span>
+            </button>
+
+            <div id="popover-notation" class="neo-popover hidden">
+              <div class="popover-title">Seleccionar Notación</div>
+              <div class="popover-options-list">
+                <button type="button" class="popover-option-btn active" data-notation="standard" id="opt-notation-standard">
+                  <span class="option-name">Estándar</span>
+                  <span class="option-symbols">¬, ∧, ∨, →, ↔</span>
+                </button>
+                <button type="button" class="popover-option-btn" data-notation="alternative" id="opt-notation-alternative">
+                  <span class="option-name">Alternativa</span>
+                  <span class="option-symbols">~, &, ∨, ⊃, ≡</span>
+                </button>
+              </div>
+              <!-- Mantener elemento select e indicador locked para compatibilidad total con scripts y pruebas -->
+              <div style="display: none;">
+                <select id="notation-select">
+                  <option value="standard">Estándar (¬, ∧, ∨, →, ↔)</option>
+                  <option value="alternative">Alternativa (~, &, ∨, ⊃, ≡)</option>
+                </select>
+                <span id="notation-locked-badge" class="badge badge-admin hidden">Fijo</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Menú interactivo de Usuario y Cierre de Sesión -->
+          <div class="topbar-popover-wrapper">
+            <button type="button" class="topbar-link-btn" id="btn-topbar-user" title="Opciones de sesión">
+              <span id="current-user-avatar" class="avatar-icon-sm">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              </span>
+              <span id="current-username" class="topbar-username">Invitado</span>
+              <span id="current-user-role" class="topbar-badge badge-user">Estudiante</span>
+            </button>
+
+            <div id="popover-user" class="neo-popover hidden">
+              <p class="popover-confirm-text">¿Desea cerrar sesión?</p>
+              <button type="button" id="btn-logout" class="btn btn-danger btn-block">
+                Cerrar sesión
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div class="header-controls">
-        <!-- Selector de Notación -->
-        <div class="user-profile-pill" id="notation-control-container" title="Alternar notación de conectivos lógicos">
-          <span style="font-size: 0.8rem; color: var(--text-muted);">Notación:</span>
-          <select id="notation-select" class="form-input" style="padding: 0.2rem 0.6rem; font-size: 0.8rem; width: auto; background: transparent; border: none; font-weight: 600;">
-            <option value="standard">Estándar (¬, ∧, ∨, →, ↔)</option>
-            <option value="alternative">Alternativa (~, &, ∨, ⊃, ≡)</option>
-          </select>
-          <span id="notation-locked-badge" class="badge badge-admin hidden" style="font-size: 0.65rem;" title="Bloqueado por el Administrador">Fijo</span>
-        </div>
-
-        <!-- Indicador de Perfil y Sesión -->
-        <div class="user-profile-pill" id="user-session-info">
-          <span id="current-user-avatar" class="avatar-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-          </span>
-          <span id="current-username" style="font-weight: 600;">Invitado</span>
-          <span id="current-user-role" class="badge badge-user">Estudiante</span>
-        </div>
-
-        <!-- Botón de Tema (Dark / Light) -->
-        <button id="btn-toggle-theme" class="btn btn-icon" title="Cambiar Tema Claro / Oscuro">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line></svg>
-        </button>
-
-        <!-- Botón de Cerrar Sesión -->
-        <button id="btn-logout" class="btn btn-secondary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem;">
-          Salir
-        </button>
       </div>
     </header>
 
-    <!-- Navegación por Pestañas del Sistema -->
-    <nav class="nav-tabs" id="main-nav-tabs">
-      <button class="nav-tab active" data-tab="tab-builder">
-        <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span> Constructor Visual
+    <!-- Navegación Lateral Derecha (Dock 100vh con solo iconos) -->
+    <nav class="nav-tabs" id="main-nav-tabs" aria-label="Navegación principal">
+      <button class="nav-tab active" data-tab="tab-builder" title="Constructor Visual">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
       </button>
-      <button class="nav-tab" data-tab="tab-inverse">
-        <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path><path d="M3 21v-5h5"></path></svg></span> Proceso Inverso
+      <button class="nav-tab" data-tab="tab-inverse" title="Proceso Inverso">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path><path d="M3 21v-5h5"></path></svg>
       </button>
-      <button class="nav-tab" data-tab="tab-truthtable">
-        <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="12" y1="3" x2="12" y2="21"></line></svg></span> Tabla de Verdad & Árbol
+      <button class="nav-tab" data-tab="tab-truthtable" title="Tabla de Verdad & Árbol">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="12" y1="3" x2="12" y2="21"></line></svg>
       </button>
-      <button class="nav-tab" data-tab="tab-practice">
-        <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg></span> Centro de Prácticas
+      <button class="nav-tab" data-tab="tab-practice" title="Centro de Prácticas">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
       </button>
-      <button class="nav-tab" id="tab-nav-sections" data-tab="tab-sections">
-        <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span> Secciones
+      <button class="nav-tab" id="tab-nav-sections" data-tab="tab-sections" title="Secciones">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
       </button>
-      <button class="nav-tab hidden" id="tab-nav-admin" data-tab="tab-admin">
-        <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></span> Parámetros
+      <button class="nav-tab hidden" id="tab-nav-admin" data-tab="tab-admin" title="Parámetros Globales">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
       </button>
     </nav>
 
@@ -771,6 +786,11 @@
 
   <!-- Contenedor de Notificaciones Toast -->
   <div id="toast-container" class="toast-container"></div>
+
+  <!-- Boton Fijo Flotante de Tema (Esquina Inferior Izquierda) -->
+  <button type="button" id="btn-toggle-theme" class="btn-theme-bottom-left" title="Cambiar Tema Claro / Oscuro" aria-label="Cambiar Tema Claro / Oscuro">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line></svg>
+  </button>
 
   <!-- Script Principal de la Aplicación -->
   <script type="module" src="js/app.js"></script>

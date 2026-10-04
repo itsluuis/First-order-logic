@@ -78,7 +78,7 @@
 .mascot-screen-glow {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 55%);
+  background: rgba(255, 255, 255, 0.06);
   pointer-events: none;
   border-radius: inherit;
 }
