@@ -11,6 +11,7 @@ import { FBFParser, NOTATION_MODES, NOTATION_SYMBOLS, OPERATORS } from './logic/
 import { TruthTableEngine } from './logic/truthTable.js';
 import { NaturalLanguageTranslator } from './logic/naturalLanguage.js';
 import { RandomGenerators } from './logic/generators.js';
+import { AllOperationsEngine } from './logic/allOperations.js';
 import { MascotController } from './mascot/mascotController.js';
 import { PracticeEngine } from './practice/practiceEngine.js';
 import { PracticeView } from './practice/practiceView.js';
@@ -177,6 +178,16 @@ function updateNotationUI() {
 
   // Re-evaluar display del constructor si hay tokens
   updateBuilderDisplay();
+
+  // Refrescar paneles de todas las operaciones si están visibles
+  const builderOpsSection = document.getElementById('builder-all-operations-section');
+  if (builderOpsSection && !builderOpsSection.classList.contains('hidden')) {
+    document.getElementById('btn-calc-all-builder')?.click();
+  }
+  const inverseOpsSection = document.getElementById('inverse-all-operations-section');
+  if (inverseOpsSection && !inverseOpsSection.classList.contains('hidden')) {
+    document.getElementById('btn-calc-all-inverse')?.click();
+  }
 }
 
 function initNotationEvents() {
@@ -1019,6 +1030,37 @@ function initVisualBuilder() {
     switchTab('tab-truthtable');
     document.getElementById('btn-generate-truth-table')?.click();
   });
+
+  // Botón para Calcular Todas las Operaciones Posibles en el Constructor Visual
+  document.getElementById('btn-calc-all-builder')?.addEventListener('click', (e) => {
+    triggerSuccessFeedback(e.currentTarget);
+    const vars = AppState.builderAtomics.map(a => a.name);
+    const varMap = {};
+    AppState.builderAtomics.forEach(a => {
+      varMap[a.name] = a.text;
+    });
+
+    renderAllOperationsPanel(
+      'builder-all-operations-section',
+      'builder-all-ops-count',
+      'builder-all-ops-grid',
+      vars,
+      varMap,
+      (op) => {
+        AppState.builderTokens = [
+          { type: 'var', value: op.leftVar },
+          { type: 'op', value: op.operator },
+          { type: 'var', value: op.rightVar }
+        ];
+        updateBuilderDisplay();
+        document.getElementById('builder-canvas')?.scrollIntoView({ behavior: 'smooth' });
+      }
+    );
+  });
+
+  document.getElementById('btn-close-all-ops-builder')?.addEventListener('click', () => {
+    document.getElementById('builder-all-operations-section')?.classList.add('hidden');
+  });
 }
 
 // =============================================================================
@@ -1157,6 +1199,46 @@ function initInverseProcess() {
     switchTab('tab-truthtable');
     document.getElementById('btn-generate-truth-table')?.click();
   });
+
+  // Botón para Calcular Todas las Operaciones Posibles en el Proceso Inverso
+  document.getElementById('btn-calc-all-inverse')?.addEventListener('click', (e) => {
+    triggerSuccessFeedback(e.currentTarget);
+    let vars = AppState.inverseVars;
+    if (!vars || vars.length === 0) {
+      const existingInputs = document.querySelectorAll('#inverse-var-inputs-list input[id^="inverse-var-input-"]');
+      if (existingInputs.length > 0) {
+        vars = Array.from(existingInputs).map(inp => inp.id.replace('inverse-var-input-', ''));
+      }
+    }
+
+    const varMap = {};
+    if (vars && vars.length > 0) {
+      vars.forEach(v => {
+        const inp = document.getElementById(`inverse-var-input-${v}`);
+        varMap[v] = (inp && inp.value.trim()) || AppState.inverseVarMap[v] || `[proposición ${v}]`;
+      });
+    }
+
+    renderAllOperationsPanel(
+      'inverse-all-operations-section',
+      'inverse-all-ops-count',
+      'inverse-all-ops-grid',
+      vars || [],
+      varMap,
+      (op) => {
+        const input = document.getElementById('inverse-fbf-input');
+        if (input) {
+          input.value = op.fbf;
+          document.getElementById('btn-parse-inverse')?.click();
+          input.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+    );
+  });
+
+  document.getElementById('btn-close-all-ops-inverse')?.addEventListener('click', () => {
+    document.getElementById('inverse-all-operations-section')?.classList.add('hidden');
+  });
 }
 
 function renderInverseVarInputs(vars) {
@@ -1182,6 +1264,99 @@ function renderInverseVarInputs(vars) {
       }
     });
   });
+}
+
+// =============================================================================
+// TODAS LAS OPERACIONES POSIBLES (CONSTRUCTOR Y PROCESO INVERSO)
+// =============================================================================
+function renderAllOperationsPanel(containerId, countId, gridId, variables, variableMap, onLoadFormula) {
+  const container = document.getElementById(containerId);
+  const countEl = document.getElementById(countId);
+  const gridEl = document.getElementById(gridId);
+  if (!container || !gridEl) return;
+
+  if (!variables || variables.length < 2) {
+    container.classList.remove('hidden');
+    if (countEl) countEl.textContent = '0';
+    gridEl.innerHTML = `
+      <div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--text-secondary); background: var(--bg-card); border: 2px dashed var(--border-color); border-radius: var(--radius-md);">
+        <p style="font-size: 1.05rem; font-weight: 700; color: var(--pop-yellow); margin-bottom: 0.5rem;">
+          Se requieren al menos 2 proposiciones atómicas
+        </p>
+        <p style="font-size: 0.88rem; margin: 0; line-height: 1.5;">
+          Para calcular las operaciones combinatorias binarias necesitas tener registradas al menos dos variables (ej. p y q). Agrega o define otra variable para comenzar.
+        </p>
+      </div>
+    `;
+    container.scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
+
+  const operations = AllOperationsEngine.generateAllPairwiseOperations(
+    variables,
+    variableMap,
+    AppState.currentNotation
+  );
+
+  if (countEl) countEl.textContent = operations.length;
+  gridEl.innerHTML = '';
+
+  const fragment = document.createDocumentFragment();
+
+  operations.forEach(op => {
+    const card = document.createElement('div');
+    card.className = 'all-ops-card';
+
+    let opBadgeClass = 'badge-and';
+    if (op.operator === OPERATORS.OR) opBadgeClass = 'badge-or';
+    else if (op.operator === OPERATORS.IMPLIES) opBadgeClass = 'badge-implies';
+    else if (op.operator === OPERATORS.IFF) opBadgeClass = 'badge-iff';
+
+    let truthBadgeClass = 'badge-contingency';
+    if (op.truthDiagnosis === 'Tautología') truthBadgeClass = 'badge-tautology';
+    else if (op.truthDiagnosis === 'Contradicción') truthBadgeClass = 'badge-contradiction';
+
+    const safeSpanish = NaturalLanguageTranslator.formatCompleteSentence(op.spanishText);
+
+    card.innerHTML = `
+      <div>
+        <div class="all-ops-header">
+          <span class="all-ops-fbf-badge ${opBadgeClass}">${op.opLabel}</span>
+          <span class="all-ops-truth-badge ${truthBadgeClass}">${op.truthDiagnosis}</span>
+        </div>
+        <div class="all-ops-formula">${op.fbf}</div>
+        <div class="all-ops-spanish">"${safeSpanish}"</div>
+      </div>
+      <div class="all-ops-actions">
+        <button class="btn btn-secondary btn-sm btn-op-load" title="Cargar esta fórmula">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+          Cargar
+        </button>
+        <button class="btn btn-primary btn-sm btn-op-truth" title="Ver en Tabla de Verdad">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="12" y1="3" x2="12" y2="21"></line></svg>
+          Tabla
+        </button>
+      </div>
+    `;
+
+    card.querySelector('.btn-op-load').addEventListener('click', (e) => {
+      triggerSuccessFeedback(e.currentTarget);
+      onLoadFormula(op);
+    });
+
+    card.querySelector('.btn-op-truth').addEventListener('click', () => {
+      const truthInput = document.getElementById('truth-fbf-input');
+      if (truthInput) truthInput.value = op.fbf;
+      switchTab('tab-truthtable');
+      document.getElementById('btn-generate-truth-table')?.click();
+    });
+
+    fragment.appendChild(card);
+  });
+
+  gridEl.appendChild(fragment);
+  container.classList.remove('hidden');
+  container.scrollIntoView({ behavior: 'smooth' });
 }
 
 // =============================================================================

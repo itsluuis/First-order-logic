@@ -1664,3 +1664,179 @@ body {
   }
 }
 
+/* ==========================================================================
+   PANEL Y TARJETAS DE TODAS LAS OPERACIONES POSIBLES
+   ========================================================================== */
+.all-ops-section {
+  animation: fadeInOps 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-top: 1.5rem;
+  border-top: 2px solid var(--border-color);
+  padding-top: 1rem;
+}
+
+@keyframes fadeInOps {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.all-ops-grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 1rem;
+  max-height: 480px;
+  overflow-y: auto;
+  padding: 0.5rem 0.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) var(--bg-sunken);
+}
+
+.all-ops-grid-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.all-ops-grid-container::-webkit-scrollbar-track {
+  background: var(--bg-sunken);
+  border-radius: var(--radius-sm);
+}
+
+.all-ops-grid-container::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+.all-ops-grid-container::-webkit-scrollbar-thumb:hover {
+  background: var(--pop-blue);
+}
+
+.all-ops-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 0 var(--border-3d-shadow);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.all-ops-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 var(--border-3d-shadow);
+  border-color: var(--pop-blue);
+}
+
+.all-ops-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.all-ops-fbf-badge {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+}
+
+.all-ops-fbf-badge.badge-and {
+  background: var(--pop-blue-subtle);
+  color: var(--pop-blue);
+  border: 1px solid var(--pop-blue);
+}
+
+.all-ops-fbf-badge.badge-or {
+  background: var(--pop-orange-subtle);
+  color: var(--pop-orange);
+  border: 1px solid var(--pop-orange);
+}
+
+.all-ops-fbf-badge.badge-implies {
+  background: var(--pop-purple-subtle);
+  color: var(--pop-purple);
+  border: 1px solid var(--pop-purple);
+}
+
+.all-ops-fbf-badge.badge-iff {
+  background: var(--pop-green-subtle);
+  color: var(--pop-green);
+  border: 1px solid var(--pop-green);
+}
+
+.all-ops-truth-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.all-ops-truth-badge.badge-contingency {
+  background: var(--pop-yellow-subtle);
+  color: var(--pop-yellow);
+  border: 1px solid var(--pop-yellow);
+}
+
+.all-ops-truth-badge.badge-tautology {
+  background: var(--pop-green-subtle);
+  color: var(--pop-green);
+  border: 1px solid var(--pop-green);
+}
+
+.all-ops-truth-badge.badge-contradiction {
+  background: var(--pop-red-subtle);
+  color: var(--pop-red);
+  border: 1px solid var(--pop-red);
+}
+
+.all-ops-formula {
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0.4rem 0 0.25rem 0;
+  letter-spacing: 0.03em;
+}
+
+.all-ops-spanish {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin: 0.35rem 0 0.85rem 0;
+  background: var(--bg-sunken);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.all-ops-actions {
+  display: flex;
+  gap: 0.45rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.all-ops-actions .btn {
+  flex: 1;
+  font-size: 0.75rem;
+  padding: 0.35rem 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+
