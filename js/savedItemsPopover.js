@@ -245,6 +245,44 @@ export class SavedItemsPopover {
   }
 
   /**
+   * Elimina un elemento de la lista activa en pantalla sin cerrar ni reabrir el popover
+   */
+  removeItem(itemId, updatedQuotaInfo) {
+    if (!this.activePopover) return;
+
+    if (this.currentOptions && Array.isArray(this.currentOptions.items)) {
+      this.currentOptions.items = this.currentOptions.items.filter(it => it.id !== itemId);
+    }
+
+    const row = this.activePopover.querySelector(`.saved-item-row[data-id="${itemId}"]`);
+    if (row) {
+      row.remove();
+    }
+
+    if (updatedQuotaInfo) {
+      const quotaBadge = this.activePopover.querySelector('.saved-popover-quota');
+      if (quotaBadge) {
+        quotaBadge.textContent = `${updatedQuotaInfo.current} / ${updatedQuotaInfo.max}`;
+      }
+    }
+
+    const list = this.activePopover.querySelector('.saved-items-list');
+    if (list && list.querySelectorAll('.saved-item-row').length === 0) {
+      list.innerHTML = `
+        <div class="saved-popover-empty">
+          <p class="text-muted" style="margin: 0; font-size: 0.85rem;">
+            No tienes elementos guardados en esta categoria.
+          </p>
+        </div>
+      `;
+    }
+
+    if (this.currentOptions && this.currentOptions.anchorEl) {
+      this.positionPopover(this.currentOptions.anchorEl, this.activePopover);
+    }
+  }
+
+  /**
    * Calcula coordenadas para anclar el popover al elemento disparador
    */
   positionPopover(anchorEl, popover) {

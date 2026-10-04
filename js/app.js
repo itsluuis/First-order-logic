@@ -2054,7 +2054,8 @@ function openSavedItemsPicker(category, anchorEl) {
     onDelete: (item) => {
       savedItemsStorage.deleteItem(userId, category, item.id);
       showToast('Elemento eliminado del banco de guardados.', 'info');
-      openSavedItemsPicker(category, anchorEl);
+      const updatedQuota = savedItemsStorage.getQuotaInfo(userId, category);
+      savedItemsPopover.removeItem(item.id, updatedQuota);
     }
   });
 }

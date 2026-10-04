@@ -170,5 +170,33 @@ describe('Saved Items Integration & Quality Policy', () => {
       'js/savedItemsPopover.js must not trigger flash feedback on entire rows'
     );
   });
+
+  it('Verifies deleting an item removes it in-place without closing and reopening popover', () => {
+    const popoverJsPath = path.resolve('js/savedItemsPopover.js');
+    const popoverJs = fs.readFileSync(popoverJsPath, 'utf-8');
+
+    assert.match(
+      popoverJs,
+      /removeItem\s*\(\s*itemId\s*,\s*updatedQuotaInfo\s*\)/,
+      'SavedItemsPopover must have a removeItem method for in-place DOM removal'
+    );
+
+    const appJsPath = path.resolve('js/app.js');
+    const appJs = fs.readFileSync(appJsPath, 'utf-8');
+
+    // Verify onDelete calls removeItem and does NOT call openSavedItemsPicker
+    const onDeleteMatch = appJs.match(/onDelete:\s*\([^)]*\)\s*=>\s*\{([^}]*)\}/);
+    assert.ok(onDeleteMatch, 'onDelete callback must exist in openSavedItemsPicker');
+    assert.doesNotMatch(
+      onDeleteMatch[1],
+      /openSavedItemsPicker/,
+      'onDelete must not re-invoke openSavedItemsPicker (which causes close/reopen)'
+    );
+    assert.match(
+      onDeleteMatch[1],
+      /savedItemsPopover\.removeItem/,
+      'onDelete must call savedItemsPopover.removeItem to delete cleanly in-place'
+    );
+  });
 });
 
