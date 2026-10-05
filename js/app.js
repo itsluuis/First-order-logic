@@ -781,8 +781,11 @@ function renderAdminMinigamesUI() {
         </div>
         <p class="minigame-admin-desc">${g.desc}</p>
         <div class="minigame-admin-footer">
-          <span class="text-muted" style="font-size: 0.75rem;">Visibilidad: ${isDisabled ? 'Oculto / Bloqueado' : 'Disponible'}</span>
-          <button type="button" class="btn ${btnClass} btn-toggle-admin-game" data-game-id="${g.id}" style="font-size: 0.8rem; padding: 0.4rem 0.85rem;">
+          <span class="minigame-vis-label">
+            <span class="minigame-vis-dot ${isDisabled ? 'disabled' : 'active'}"></span>
+            ${isDisabled ? 'Bloqueado' : 'Disponible'}
+          </span>
+          <button type="button" class="btn ${btnClass} btn-toggle-admin-game" data-game-id="${g.id}">
             ${btnText}
           </button>
         </div>

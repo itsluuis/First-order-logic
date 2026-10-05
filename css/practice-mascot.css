@@ -1337,20 +1337,20 @@
 
 /* Cuadricula de gestion de minijuegos en el Panel de Administrador */
 .minigames-admin-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
-  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .minigame-admin-card {
   background: var(--bg-card);
   border: 2px solid var(--border-color);
   border-radius: var(--radius-lg, 12px);
-  padding: 12px 14px;
+  padding: 10px 14px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   box-shadow: 0 3px 0 rgba(0, 0, 0, 0.08);
   transition: border-color 0.15s ease, background 0.15s ease;
 }
@@ -1364,21 +1364,24 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 
 .minigame-admin-title-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  min-width: 0;
 }
 
 .minigame-admin-title-row .admin-game-icon {
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
   color: var(--primary, #3b82f6);
   display: flex;
   align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .minigame-admin-card.is-disabled .admin-game-icon {
@@ -1387,15 +1390,16 @@
 
 .minigame-admin-name {
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   color: var(--text-primary);
   margin: 0;
+  line-height: 1.25;
 }
 
 .minigame-admin-desc {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
-  line-height: 1.4;
+  line-height: 1.35;
   margin: 0;
   flex-grow: 1;
 }
@@ -1404,17 +1408,54 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 10px;
+  gap: 8px;
+  padding-top: 8px;
   border-top: 1px solid var(--border-color);
+  margin-top: auto;
+}
+
+.minigame-vis-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.minigame-vis-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.minigame-vis-dot.active {
+  background: #34d399;
+  box-shadow: 0 0 6px rgba(52, 211, 153, 0.4);
+}
+
+.minigame-vis-dot.disabled {
+  background: #f87171;
+  box-shadow: 0 0 6px rgba(248, 113, 113, 0.4);
+}
+
+.minigame-admin-footer .btn {
+  font-size: 0.78rem;
+  padding: 5px 12px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .badge-game-status {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  padding: 3px 8px;
+  padding: 2px 7px;
   border-radius: 9999px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .badge-game-active {
