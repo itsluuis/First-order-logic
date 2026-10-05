@@ -7,6 +7,66 @@
 
 import { GAME_DIFFICULTIES } from './practiceEngine.js';
 import { ICONS } from '../icons.js';
+import { dbService } from '../storage.js';
+
+export const PRACTICE_GAMES = [
+  {
+    id: 'tree',
+    title: 'Árbol Correcto',
+    icon: ICONS.tree,
+    desc: 'Analiza el árbol sintáctico generado aleatoriamente y deduce a qué Fórmula Bien Formada corresponde entre 4 opciones.',
+    difficulties: [
+      { value: 'facil', label: 'Fácil (2 min)' },
+      { value: 'normal', label: 'Normal (1:30 min)', selected: true },
+      { value: 'dificil', label: 'Difícil (30 seg)' }
+    ],
+    btnText: 'Jugar',
+    btnIcon: ICONS.play,
+    isDuel: false
+  },
+  {
+    id: 'molecular',
+    title: 'Moleculares',
+    icon: ICONS.puzzle,
+    desc: 'Lee una proposición molecular en lenguaje cotidiano y construye su fórmula formal exacta usando bloques de tokens interactivos.',
+    difficulties: [
+      { value: 'facil', label: 'Fácil (5 min)' },
+      { value: 'normal', label: 'Normal (2:30 min)', selected: true },
+      { value: 'dificil', label: 'Difícil (1:30 min)' }
+    ],
+    btnText: 'Jugar',
+    btnIcon: ICONS.play,
+    isDuel: false
+  },
+  {
+    id: 'verdict',
+    title: 'Veredicto',
+    icon: ICONS.scale,
+    desc: 'Observa la fórmula lógica y decide a toda velocidad: ¿es Tautología, Contradicción o Contingencia? Los fallos penalizan.',
+    difficulties: [
+      { value: 'facil', label: 'Fácil (2 min)' },
+      { value: 'normal', label: 'Normal (1:30 min)', selected: true },
+      { value: 'dificil', label: 'Difícil (45 seg)' }
+    ],
+    btnText: 'Jugar',
+    btnIcon: ICONS.play,
+    isDuel: false
+  },
+  {
+    id: 'duel',
+    title: 'Duelo contra la Mascota IA',
+    icon: ICONS.bolt,
+    desc: 'Compite en tiempo real contra Moli evaluando si una fórmula es Verdadera o Falsa. La IA evalúa la fórmula y comete fallos controlados.',
+    difficulties: [
+      { value: 'facil', label: 'Fácil (2 min)' },
+      { value: 'normal', label: 'Normal (1:30 min)', selected: true },
+      { value: 'dificil', label: 'Difícil (1 min)' }
+    ],
+    btnText: 'Desafiar',
+    btnIcon: ICONS.swords,
+    isDuel: true
+  }
+];
 
 export class PracticeView {
   constructor(containerId = 'practice-center-container') {
@@ -28,12 +88,14 @@ export class PracticeView {
   /**
    * Renderiza el Lobby (Menú de Selección de Minijuegos)
    */
-  renderLobby(recommendation = null) {
+  renderLobby(recommendation = null, disabledGames = null) {
     if (!this.container) return;
     this.isLocked = false;
 
+    const disabledList = disabledGames || (dbService ? dbService.getDisabledGames() : []);
+
     let recBannerHtml = '';
-    if (recommendation) {
+    if (recommendation && !disabledList.includes(recommendation.gameId)) {
       recBannerHtml = `
         <div class="practice-rec-card">
           <div id="mascot-dock-slot" class="mascot-dock-slot"></div>
@@ -44,6 +106,53 @@ export class PracticeView {
         </div>
       `;
     }
+
+    const cardsHtml = PRACTICE_GAMES.map(game => {
+      const isDisabled = disabledList.includes(game.id);
+      const diffOptions = game.difficulties.map(d =>
+        `<option value="${d.value}" ${d.selected ? 'selected' : ''}>${d.label}</option>`
+      ).join('');
+
+      let actionHtml = '';
+      if (isDisabled) {
+        actionHtml = `
+          <div class="minigame-footer">
+            <label class="diff-label">Dificultad:</label>
+            <select class="diff-select" id="diff-${game.id}" disabled>
+              ${diffOptions}
+            </select>
+            <button class="btn btn-secondary btn-disabled-game" disabled title="Este juego no está disponible en este momento">
+              <span class="btn-icon-slot">${ICONS.lock}</span> No disponible
+            </button>
+            <div class="game-unavailable-banner">
+              <span class="game-unavailable-icon">${ICONS.alert}</span>
+              <span>El juego no está disponible en este momento.</span>
+            </div>
+          </div>
+        `;
+      } else {
+        actionHtml = `
+          <div class="minigame-footer">
+            <label class="diff-label">Dificultad:</label>
+            <select class="diff-select" id="diff-${game.id}">
+              ${diffOptions}
+            </select>
+            <button class="btn btn-primary btn-play-game" data-game="${game.id}">
+              <span class="btn-icon-slot">${game.btnIcon}</span> ${game.btnText}
+            </button>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="minigame-card${game.isDuel ? ' duel-card' : ''}${isDisabled ? ' minigame-card-disabled' : ''}" data-game-id="${game.id}">
+          <div class="minigame-icon-svg">${game.icon}</div>
+          <h3 class="minigame-title">${game.title}</h3>
+          <p class="minigame-desc">${game.desc}</p>
+          ${actionHtml}
+        </div>
+      `;
+    }).join('');
 
     this.container.innerHTML = `
       <div class="practice-lobby">
@@ -57,85 +166,16 @@ export class PracticeView {
         ${recBannerHtml}
 
         <div class="minigames-grid">
-          <!-- Minijuego 1: Árbol Correcto -->
-          <div class="minigame-card" data-game-id="tree">
-            <div class="minigame-icon-svg">${ICONS.tree}</div>
-            <h3 class="minigame-title">Árbol Correcto</h3>
-            <p class="minigame-desc">Analiza el árbol sintáctico generado aleatoriamente y deduce a qué Fórmula Bien Formada corresponde entre 4 opciones.</p>
-            <div class="minigame-footer">
-              <label class="diff-label">Dificultad:</label>
-              <select class="diff-select" id="diff-tree">
-                <option value="facil">Fácil (2 min)</option>
-                <option value="normal" selected>Normal (1:30 min)</option>
-                <option value="dificil">Difícil (30 seg)</option>
-              </select>
-              <button class="btn btn-primary btn-play-game" data-game="tree">
-                <span class="btn-icon-slot">${ICONS.play}</span> Jugar
-              </button>
-            </div>
-          </div>
-
-          <!-- Minijuego 2: Moleculares -->
-          <div class="minigame-card" data-game-id="molecular">
-            <div class="minigame-icon-svg">${ICONS.puzzle}</div>
-            <h3 class="minigame-title">Moleculares</h3>
-            <p class="minigame-desc">Lee una proposición molecular en lenguaje cotidiano y construye su fórmula formal exacta usando bloques de tokens interactivos.</p>
-            <div class="minigame-footer">
-              <label class="diff-label">Dificultad:</label>
-              <select class="diff-select" id="diff-molecular">
-                <option value="facil">Fácil (5 min)</option>
-                <option value="normal" selected>Normal (2:30 min)</option>
-                <option value="dificil">Difícil (1:30 min)</option>
-              </select>
-              <button class="btn btn-primary btn-play-game" data-game="molecular">
-                <span class="btn-icon-slot">${ICONS.play}</span> Jugar
-              </button>
-            </div>
-          </div>
-
-          <!-- Minijuego 3: Veredicto -->
-          <div class="minigame-card" data-game-id="verdict">
-            <div class="minigame-icon-svg">${ICONS.scale}</div>
-            <h3 class="minigame-title">Veredicto</h3>
-            <p class="minigame-desc">Observa la fórmula lógica y decide a toda velocidad: ¿es Tautología, Contradicción o Contingencia? Los fallos penalizan.</p>
-            <div class="minigame-footer">
-              <label class="diff-label">Dificultad:</label>
-              <select class="diff-select" id="diff-verdict">
-                <option value="facil">Fácil (2 min)</option>
-                <option value="normal" selected>Normal (1:30 min)</option>
-                <option value="dificil">Difícil (45 seg)</option>
-              </select>
-              <button class="btn btn-primary btn-play-game" data-game="verdict">
-                <span class="btn-icon-slot">${ICONS.play}</span> Jugar
-              </button>
-            </div>
-          </div>
-
-          <!-- Minijuego 4: Duelo contra la Mascota IA -->
-          <div class="minigame-card duel-card" data-game-id="duel">
-            <div class="minigame-icon-svg">${ICONS.bolt}</div>
-            <h3 class="minigame-title">Duelo contra la Mascota IA</h3>
-            <p class="minigame-desc">Compite en tiempo real contra Moli evaluando si una fórmula es Verdadera o Falsa. La IA evalúa la fórmula y comete fallos controlados.</p>
-            <div class="minigame-footer">
-              <label class="diff-label">Dificultad:</label>
-              <select class="diff-select" id="diff-duel">
-                <option value="facil">Fácil (2 min)</option>
-                <option value="normal" selected>Normal (1:30 min)</option>
-                <option value="dificil">Difícil (1 min)</option>
-              </select>
-              <button class="btn btn-primary btn-play-game" data-game="duel">
-                <span class="btn-icon-slot">${ICONS.swords}</span> Desafiar
-              </button>
-            </div>
-          </div>
+          ${cardsHtml}
         </div>
       </div>
     `;
 
-    // Vincular clics de inicio de juego
+    // Vincular clics de inicio de juego activo
     this.container.querySelectorAll('.btn-play-game').forEach(btn => {
       btn.addEventListener('click', () => {
         const gameId = btn.getAttribute('data-game');
+        if (disabledList.includes(gameId)) return;
         const diffSelect = document.getElementById(`diff-${gameId}`);
         const difficulty = diffSelect ? diffSelect.value : 'normal';
 

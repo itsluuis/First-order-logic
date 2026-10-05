@@ -21,19 +21,104 @@ export class MascotView {
     this.onMascotClick = null;
     this.onBubbleClose = null;
 
+    // Estado del seguimiento de mirada con el cursor
+    this.isMouseTracking = false;
+    this._boundHandleMouseMove = this._handleMouseMove.bind(this);
+    this._mouseRafId = null;
+    this._targetEyeX = 0;
+    this._targetEyeY = 0;
+
     this._initDOM();
     this._startIdleCycle();
   }
 
   /**
-   * Define si el usuario está realizando activamente un ejercicio o minijuego
+   * Define si el usuario esta realizando activamente un ejercicio o minijuego
    */
   setGamePlaying(isPlaying) {
     this.isGamePlaying = Boolean(isPlaying);
     if (this.isGamePlaying) {
       this._cancelActiveIdleAction();
       this.hideSpeechBubble(true);
+    } else {
+      this.stopMouseTracking();
     }
+  }
+
+  /**
+   * Activa el seguimiento de mirada de las pupilas de Moli hacia el cursor
+   */
+  startMouseTracking() {
+    if (this.isMouseTracking) return;
+    this.isMouseTracking = true;
+    this.setExpression('idle');
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('mousemove', this._boundHandleMouseMove, { passive: true });
+    }
+  }
+
+  /**
+   * Desactiva el seguimiento de mirada y regresa las pupilas al centro
+   */
+  stopMouseTracking() {
+    if (!this.isMouseTracking) return;
+    this.isMouseTracking = false;
+
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('mousemove', this._boundHandleMouseMove);
+      if (this._mouseRafId) {
+        window.cancelAnimationFrame(this._mouseRafId);
+        this._mouseRafId = null;
+      }
+    }
+
+    const leftEye = document.getElementById('mascot-left-eye');
+    const rightEye = document.getElementById('mascot-right-eye');
+    if (leftEye) leftEye.style.transform = '';
+    if (rightEye) rightEye.style.transform = '';
+  }
+
+  _handleMouseMove(e) {
+    if (!this.isMouseTracking || !this.visor) return;
+
+    const rect = (this.visor && typeof this.visor.getBoundingClientRect === 'function')
+      ? this.visor.getBoundingClientRect()
+      : { left: 0, top: 0, width: 140, height: 70 };
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    const deltaX = e.clientX - centerX;
+    const deltaY = e.clientY - centerY;
+    const distance = Math.hypot(deltaX, deltaY);
+
+    if (distance === 0) {
+      this._targetEyeX = 0;
+      this._targetEyeY = 0;
+    } else {
+      // Limite suave eliptico (maximo 7px horizontal, 4.5px vertical)
+      const angle = Math.atan2(deltaY, deltaX);
+      const intensity = Math.min(distance * 0.04, 1);
+      this._targetEyeX = Math.cos(angle) * (7 * intensity);
+      this._targetEyeY = Math.sin(angle) * (4.5 * intensity);
+    }
+
+    if (!this._mouseRafId && typeof window !== 'undefined') {
+      this._mouseRafId = window.requestAnimationFrame(() => {
+        this._renderEyePositions();
+        this._mouseRafId = null;
+      });
+    }
+  }
+
+  _renderEyePositions() {
+    if (!this.isMouseTracking) return;
+    const leftEye = document.getElementById('mascot-left-eye');
+    const rightEye = document.getElementById('mascot-right-eye');
+    const transformStr = `translate(${this._targetEyeX.toFixed(2)}px, ${this._targetEyeY.toFixed(2)}px)`;
+
+    if (leftEye) leftEye.style.transform = transformStr;
+    if (rightEye) rightEye.style.transform = transformStr;
   }
 
   _initDOM() {
@@ -315,6 +400,29 @@ export class MascotView {
     this.idleTimer = setTimeout(() => {
       this._runNextIdle();
     }, delayMs);
+    if (this.idleTimer && typeof this.idleTimer.unref === 'function') {
+      this.idleTimer.unref();
+    }
+  }
+
+  destroy() {
+    this.stopMouseTracking();
+    if (this.idleTimer) {
+      clearTimeout(this.idleTimer);
+      this.idleTimer = null;
+    }
+    if (this.activeIdleActionTimer) {
+      clearTimeout(this.activeIdleActionTimer);
+      this.activeIdleActionTimer = null;
+    }
+    if (this.autoCloseTimer) {
+      clearTimeout(this.autoCloseTimer);
+      this.autoCloseTimer = null;
+    }
+    if (this.closeTransitionTimer) {
+      clearTimeout(this.closeTransitionTimer);
+      this.closeTransitionTimer = null;
+    }
   }
 
   _cancelActiveIdleAction() {

@@ -40,7 +40,8 @@ export const PROFILES = {
 
 const DEFAULT_SETTINGS = {
   forcedNotation: 'none', // 'none', 'standard', 'alternative'
-  theme: 'dark'
+  theme: 'dark',
+  disabledGames: [] // IDs de juegos deshabilitados: 'tree', 'molecular', 'verdict', 'duel'
 };
 
 export class StorageService {
@@ -294,6 +295,33 @@ export class StorageService {
   setForcedNotation(notation) {
     this.updateSettings({ forcedNotation: notation });
     return { success: true, message: 'Política de notación actualizada correctamente.' };
+  }
+
+  getDisabledGames() {
+    const settings = this.getSettings();
+    return Array.isArray(settings.disabledGames) ? settings.disabledGames : [];
+  }
+
+  isGameDisabled(gameId) {
+    return this.getDisabledGames().includes(gameId);
+  }
+
+  toggleGameDisabled(gameId, forceState = null) {
+    const current = this.getDisabledGames();
+    const isCurrentlyDisabled = current.includes(gameId);
+    const shouldDisable = (forceState !== null) ? Boolean(forceState) : !isCurrentlyDisabled;
+
+    let updated;
+    if (shouldDisable && !isCurrentlyDisabled) {
+      updated = [...current, gameId];
+    } else if (!shouldDisable && isCurrentlyDisabled) {
+      updated = current.filter(id => id !== gameId);
+    } else {
+      updated = current;
+    }
+
+    this.updateSettings({ disabledGames: updated });
+    return { success: true, disabled: shouldDisable, disabledGames: updated };
   }
 }
 

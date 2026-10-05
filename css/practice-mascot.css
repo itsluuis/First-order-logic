@@ -1258,3 +1258,149 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================================
+   ESTILOS DE MINIJUEGOS DESHABILITADOS Y PANEL DE ADMINISTRADOR
+   ========================================================================= */
+
+/* Tarjetas de juego deshabilitadas en el Centro de Practicas */
+.minigame-card.minigame-card-disabled {
+  border-color: rgba(239, 68, 68, 0.5) !important;
+  background: rgba(239, 68, 68, 0.04) !important;
+  box-shadow: 0 4px 0 rgba(239, 68, 68, 0.25) !important;
+  opacity: 0.88;
+}
+
+.minigame-card.minigame-card-disabled:hover {
+  transform: none !important;
+  border-color: rgba(239, 68, 68, 0.6) !important;
+  box-shadow: 0 4px 0 rgba(239, 68, 68, 0.3) !important;
+}
+
+.minigame-card.minigame-card-disabled .minigame-icon-svg {
+  color: var(--accent-rose, #ef4444) !important;
+}
+
+.game-unavailable-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-md, 8px);
+  padding: 8px 12px;
+  color: #f87171;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 8px;
+}
+
+.game-unavailable-banner svg {
+  flex-shrink: 0;
+  color: #f87171;
+}
+
+.btn-disabled-game {
+  background: #374151 !important;
+  border-color: #4b5563 !important;
+  color: #9ca3af !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+  opacity: 0.75;
+}
+
+/* Cuadricula de gestion de minijuegos en el Panel de Administrador */
+.minigames-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.minigame-admin-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg, 12px);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.08);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.minigame-admin-card.is-disabled {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.03);
+}
+
+.minigame-admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.minigame-admin-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.minigame-admin-title-row .admin-game-icon {
+  width: 28px;
+  height: 28px;
+  color: var(--primary, #3b82f6);
+  display: flex;
+  align-items: center;
+}
+
+.minigame-admin-card.is-disabled .admin-game-icon {
+  color: var(--accent-rose, #ef4444);
+}
+
+.minigame-admin-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.minigame-admin-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin: 0;
+  flex-grow: 1;
+}
+
+.minigame-admin-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+.badge-game-status {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.badge-game-active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-game-disabled {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}

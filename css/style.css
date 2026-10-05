@@ -238,30 +238,30 @@ body {
   gap: 1.25rem;
 }
 
-/* Brand Icon: Cápsula Sólida Neo-Pop (Cero Gradientes) */
-.brand-icon-solid {
-  width: 44px;
-  height: 44px;
-  background: var(--pop-blue);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: var(--radius-md);
+/* Brand Identity: First Order (Nuevo Wordmark Híbrido Estilo Instagram) */
+.brand-link {
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  font-family: var(--font-sans);
-  font-size: 1.25rem;
-  font-weight: 900;
-  letter-spacing: -1px;
-  box-shadow: 0 4px 0 var(--pop-blue-shadow);
+  text-decoration: none;
   user-select: none;
-  flex-shrink: 0;
-  transition: transform 0.15s ease;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  padding: 4px 6px;
 }
 
-.brand-icon-solid:hover {
-  transform: translateY(-2px) scale(1.04);
+.brand-wordmark-svg {
+  height: 32px;
+  width: auto;
+  max-width: 220px;
+  display: block;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.15));
+  transition: filter 0.25s ease, transform 0.25s ease;
 }
+
+.brand-link:hover .brand-wordmark-svg {
+  transform: scale(1.04);
+  filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.6));
+}
+
 
 .brand-icon {
   width: 44px;

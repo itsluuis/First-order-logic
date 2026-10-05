@@ -725,6 +725,83 @@ function updateAdminSettingsUI() {
       secSelect.appendChild(opt);
     });
   }
+
+  // 3. Renderizar tarjetas de gestión de minijuegos
+  renderAdminMinigamesUI();
+}
+
+const ADMIN_GAMES_METADATA = [
+  {
+    id: 'tree',
+    name: 'Árbol Correcto',
+    desc: 'Deducción de FBF a partir del árbol sintáctico.',
+    icon: ICONS.tree
+  },
+  {
+    id: 'molecular',
+    name: 'Moleculares',
+    desc: 'Construcción formal de proposiciones cotidianas con tokens.',
+    icon: ICONS.puzzle
+  },
+  {
+    id: 'verdict',
+    name: 'Veredicto',
+    desc: 'Clasificación veloz de FBF en Tautología, Contradicción o Contingencia.',
+    icon: ICONS.scale
+  },
+  {
+    id: 'duel',
+    name: 'Duelo contra la Mascota IA',
+    desc: 'Competencia en tiempo real contra Moli evaluando verdad o falsedad.',
+    icon: ICONS.bolt
+  }
+];
+
+function renderAdminMinigamesUI() {
+  const container = document.getElementById('admin-minigames-container');
+  if (!container) return;
+
+  const disabledGames = dbService.getDisabledGames();
+
+  container.innerHTML = ADMIN_GAMES_METADATA.map(g => {
+    const isDisabled = disabledGames.includes(g.id);
+    const statusText = isDisabled ? 'Deshabilitado' : 'Activo';
+    const statusClass = isDisabled ? 'badge-game-disabled' : 'badge-game-active';
+    const btnText = isDisabled ? 'Habilitar Juego' : 'Deshabilitar Juego';
+    const btnClass = isDisabled ? 'btn-primary' : 'btn-secondary';
+
+    return `
+      <div class="minigame-admin-card${isDisabled ? ' is-disabled' : ''}" data-admin-game-id="${g.id}">
+        <div class="minigame-admin-header">
+          <div class="minigame-admin-title-row">
+            <span class="admin-game-icon">${g.icon}</span>
+            <h4 class="minigame-admin-name">${g.name}</h4>
+          </div>
+          <span class="badge-game-status ${statusClass}">${statusText}</span>
+        </div>
+        <p class="minigame-admin-desc">${g.desc}</p>
+        <div class="minigame-admin-footer">
+          <span class="text-muted" style="font-size: 0.75rem;">Visibilidad: ${isDisabled ? 'Oculto / Bloqueado' : 'Disponible'}</span>
+          <button type="button" class="btn ${btnClass} btn-toggle-admin-game" data-game-id="${g.id}" style="font-size: 0.8rem; padding: 0.4rem 0.85rem;">
+            ${btnText}
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.querySelectorAll('.btn-toggle-admin-game').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const gameId = btn.getAttribute('data-game-id');
+      dbService.toggleGameDisabled(gameId);
+
+      renderAdminMinigamesUI();
+      // Si el Centro de Practicas esta instanciado, actualizar su lobby
+      if (typeof practiceView !== 'undefined' && practiceView) {
+        practiceView.renderLobby(studentModel.getRecommendation());
+      }
+    });
+  });
 }
 
 function initAdminEvents() {
@@ -832,6 +909,34 @@ function switchTab(tabId) {
 
   if (tabId === 'tab-sections') {
     renderSectionsList();
+
+    if (mascotController) {
+      const user = AppState.currentUser;
+      if (user && user.role === 'profesor') {
+        mascotController.sayQuickRemark('Bienvenido, Profesor. Listo para revisar el progreso de sus secciones.', 3500);
+      } else if (user && user.role === 'estudiante') {
+        const studentId = user.userId || user.id;
+        let pending = 0;
+        const studentSections = sectionsDB.getSectionsForStudent(studentId);
+        studentSections.forEach(s => {
+          if (Array.isArray(s.tasks)) {
+            pending += s.tasks.filter(t => !t.completedByStudentIds.includes(studentId)).length;
+          }
+        });
+
+        if (pending > 0) {
+          mascotController.sayQuickRemark(`¡Hola! Tienes ${pending} tarea${pending > 1 ? 's' : ''} pendiente${pending > 1 ? 's' : ''} esperándote en tus secciones.`, 3500);
+        } else {
+          mascotController.view.setExpression('happy');
+          mascotController.sayQuickRemark('¡Todo al día por aquí! Excelente constancia con la lógica simbólica.', 3500);
+          setTimeout(() => {
+            if (mascotController.view.currentExpression === 'happy') {
+              mascotController.view.setExpression('idle');
+            }
+          }, 3500);
+        }
+      }
+    }
   }
 
   if (tabId === 'tab-practice' && practiceView && practiceEngine && !practiceEngine.isPlaying) {
@@ -1655,11 +1760,24 @@ function initPracticeAndMascot() {
       }
     } catch (_) {}
 
+    let pendingTasksCount = 0;
+    if (AppState.currentUser && AppState.currentUser.role === 'estudiante') {
+      const stId = AppState.currentUser.userId || AppState.currentUser.id;
+      const studentSections = sectionsDB.getSectionsForStudent(stId);
+      studentSections.forEach(s => {
+        if (Array.isArray(s.tasks)) {
+          pendingTasksCount += s.tasks.filter(t => !t.completedByStudentIds.includes(stId)).length;
+        }
+      });
+    }
+
     return {
       activeTab: AppState.activeTab || 'tab-builder',
+      currentUser: AppState.currentUser,
       tokens: AppState.builderTokens,
       fbf: currentFbf,
-      mainOp: mainOp
+      mainOp: mainOp,
+      pendingTasksCount: pendingTasksCount
     };
   });
 
@@ -1847,6 +1965,16 @@ function initSectionsModule() {
       showToast(`¡Sección "${res.section.name}" creada con éxito!`, 'success');
       modalCreateSec?.classList.remove('active');
       renderSectionsList();
+
+      if (mascotController) {
+        mascotController.view.setExpression('happy');
+        mascotController.sayQuickRemark('¡Sección creada con éxito! Ahora puede asignar tareas prácticas a los estudiantes.', 3500);
+        setTimeout(() => {
+          if (mascotController.view.currentExpression === 'happy') {
+            mascotController.view.setExpression('idle');
+          }
+        }, 3500);
+      }
     } else {
       showToast(res.message, 'error');
     }
@@ -1876,6 +2004,10 @@ function initSectionsModule() {
       showToast('Tarea asignada a la sección.', 'success');
       if (input) input.value = '';
       openSectionDetail(AppState.currentSectionId);
+
+      if (mascotController) {
+        mascotController.sayQuickRemark('Tarea asignada a la sección. Los estudiantes inscritos ya pueden visualizarla.', 3500);
+      }
     } else {
       showToast(res.message || 'Error al agregar tarea.', 'error');
     }
@@ -2195,6 +2327,10 @@ function renderStudentTasks(section, studentId) {
         sectionsDB.markTaskCompleted(section.id, t.id, studentId);
         showToast('¡Tarea completada!', 'success');
         openSectionDetail(section.id);
+
+        if (mascotController) {
+          mascotController.celebrateTaskCompletion();
+        }
       }, 250);
     });
 

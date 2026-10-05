@@ -73,6 +73,8 @@ export class MascotController {
           <p><strong>Panel de Parámetros:</strong></p>
           <p>Aquí el administrador puede fijar una notación lógica obligatoria (ej. estándar <em>∧, ∨, →</em> o alternativa <em>&, ∨, ⊃</em>) para todos los usuarios.</p>
         `;
+      case 'tab-sections':
+        return this._explainSectionsTab(context);
       default:
         return `<p>Selecciona una pestaña o ingresa al <strong>Centro de Prácticas</strong> para ejercitar tu mente lógica.</p>`;
     }
@@ -178,17 +180,16 @@ export class MascotController {
     this.view.setGamePlaying(true);
     this.view.hideSpeechBubble(true);
     if (gameId === 'duel') {
+      this.view.stopMouseTracking();
       this.view.setExpression('battle');
     } else {
-      this.view.setExpression('thinking');
-      setTimeout(() => {
-        if (this.view.currentExpression === 'thinking') this.view.setExpression('idle');
-      }, 1500);
+      this.view.startMouseTracking();
     }
   }
 
   notifyGameExit() {
     this.activeGameContext = null;
+    this.view.stopMouseTracking();
     this.view.setGamePlaying(false);
     this.view.hideSpeechBubble(true);
     this.view.setExpression('idle');
@@ -200,6 +201,7 @@ export class MascotController {
 
   notifyGameOver(summary) {
     this.activeGameContext = null;
+    this.view.stopMouseTracking();
     this.view.setGamePlaying(false);
 
     if (summary.score > 3 || summary.accuracy >= 75) {
@@ -246,5 +248,60 @@ export class MascotController {
         </strong>
       </div>
     `, 3200, { isStreak: true, isCompact: true, keepExpression: true });
+  }
+
+  sayQuickRemark(contentHtml, durationMs = 3500, options = {}) {
+    this.view.sayQuickRemark(contentHtml, durationMs, options);
+  }
+
+  celebrateTaskCompletion() {
+    const expressions = ['happy', 'wink'];
+    const chosenExpr = expressions[Math.floor(Math.random() * expressions.length)];
+    this.view.setExpression(chosenExpr);
+
+    const phrases = [
+      '¡Una menos! Gran trabajo resolviendo esta tarea.',
+      '¡Misión cumplida! Tu avance quedó registrado con éxito.',
+      '¡Excelente deducción! Cada tarea completada refuerza tu lógica.'
+    ];
+    const phrase = phrases[Math.floor(Math.random() * phrases.length)];
+    this.sayQuickRemark(phrase, 3500);
+
+    setTimeout(() => {
+      if (this.view.currentExpression === chosenExpr) {
+        this.view.setExpression('idle');
+      }
+    }, 3500);
+  }
+
+  _explainSectionsTab(context) {
+    const user = context.currentUser || null;
+    const isProf = user && user.role === 'profesor';
+
+    if (isProf) {
+      return `
+        <p><strong>Gestión de Secciones Académicas:</strong></p>
+        <p>Como profesor, aquí puedes crear secciones de clase, matricular estudiantes y asignar tareas tipo To-Do para evaluar el progreso en lógica proposicional.</p>
+        <p class="text-muted" style="font-size: 0.8rem; margin-top: 0.4rem;">Tip: Las tareas completadas por el 100% de los estudiantes se depuran automáticamente para mantener el aula despejada.</p>
+      `;
+    }
+
+    const pendingCount = (typeof context.pendingTasksCount === 'number')
+      ? context.pendingTasksCount
+      : 0;
+
+    if (pendingCount > 0) {
+      return `
+        <p><strong>Tus Tareas Académicas:</strong></p>
+        <p>Tienes <strong>${pendingCount}</strong> tarea(s) pendiente(s) asignada(s) por tus profesores. Selecciona tu sección y marca las casillas a medida que resuelvas cada ejercicio.</p>
+        <p class="text-muted" style="font-size: 0.8rem; margin-top: 0.4rem;">Tip: Resolver los desafíos del Centro de Prácticas te ayudará a completar estas tareas más rápido.</p>
+      `;
+    }
+
+    return `
+      <p><strong>Secciones de Clase:</strong></p>
+      <p>¡Estás al día! No tienes tareas pendientes en tus secciones activas. Continúa repasando con el Constructor y las Tablas de Verdad.</p>
+      <p class="text-muted" style="font-size: 0.8rem; margin-top: 0.4rem;">Moli monitorea tu constancia para ayudarte a mantenerte al día.</p>
+    `;
   }
 }
