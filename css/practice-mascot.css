@@ -1314,13 +1314,14 @@
 /* Layout 2 por fila para el Panel de Administrador */
 .admin-parameters-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.25rem;
   width: 100%;
   margin-top: 0.5rem;
+  align-items: start;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 640px) {
   .admin-parameters-grid {
     grid-template-columns: 1fr;
   }
@@ -1330,7 +1331,8 @@
   display: flex;
   flex-direction: column;
   margin-top: 0 !important;
-  height: 100%;
+  margin-bottom: 0 !important;
+  height: auto;
 }
 
 /* Cuadricula de gestion de minijuegos en el Panel de Administrador */
