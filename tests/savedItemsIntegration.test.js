@@ -198,5 +198,49 @@ describe('Saved Items Integration & Quality Policy', () => {
       'onDelete must call savedItemsPopover.removeItem to delete cleanly in-place'
     );
   });
+
+  it('Verifies quick-add assigns immediately to newly added variable from + Variable button', () => {
+    const appJsPath = path.resolve('js/app.js');
+    const appJs = fs.readFileSync(appJsPath, 'utf-8');
+
+    // 1. Verificar en app.js que el boton + Variable inicializa con text vacio
+    assert.match(
+      appJs,
+      /AppState\.builderAtomics\.push\(\{\s*name:\s*nextLetter,\s*text:\s*['"]{2}\s*\}\)/,
+      'btn-add-atomic must initialize new atomic proposition with clean empty text'
+    );
+
+    // 2. Verificar que handleInsertDirect reconoce campos vacios o con placeholder previo
+    assert.match(
+      appJs,
+      /emptyAtomic\s*=\s*AppState\.builderAtomics\.find\([\s\S]*?startsWith\(['"]nueva proposición para ['"]\)/,
+      'handleInsertDirect must consider placeholders as empty slots to ensure robustness'
+    );
+
+    // 3. Simular el flujo logico
+    const mockBuilderAtomics = [
+      { name: 'p', text: 'estudio para el examen' },
+      { name: 'q', text: 'apruebo la materia de logica' },
+      { name: 'r', text: 'obtengo una calificacion sobresaliente' }
+    ];
+
+    // Paso 1: Usuario pulsa + Variable
+    const letters = ['p', 'q', 'r', 's', 't', 'u', 'w', 'x', 'y', 'z'];
+    const used = mockBuilderAtomics.map(a => a.name);
+    const nextLetter = letters.find(l => !used.includes(l));
+    mockBuilderAtomics.push({ name: nextLetter, text: '' });
+    assert.equal(nextLetter, 's');
+
+    // Paso 2: Usuario usa insercion rapida con item guardado
+    const savedItem = { id: 'atom_1', text: 'El clima esta agradable' };
+    const emptyAtomic = mockBuilderAtomics.find(a => !a.text || !a.text.trim() || a.text.startsWith('nueva proposición para '));
+    assert.ok(emptyAtomic, 'Debe encontrar un espacio disponible');
+    assert.equal(emptyAtomic.name, 's', 'El espacio disponible debe ser la variable s');
+
+    emptyAtomic.text = savedItem.text;
+    assert.equal(mockBuilderAtomics.find(a => a.name === 's').text, 'El clima esta agradable');
+    assert.equal(mockBuilderAtomics.length, 4, 'No debe crear una quinta variable t innecesariamente');
+  });
 });
+
 

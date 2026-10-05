@@ -1145,7 +1145,7 @@ function initVisualBuilder() {
 
     AppState.builderAtomics.push({
       name: nextLetter,
-      text: `nueva proposición para ${nextLetter}`
+      text: ''
     });
 
     renderAtomicDefinitions();
@@ -2384,7 +2384,7 @@ function ensureBuilderAtomicsExist(varNames = []) {
 }
 
 function ensureBuilderAtomicLetter(targetLetter) {
-  const alphabet = ['p', 'q', 'r', 's', 't'];
+  const alphabet = ['p', 'q', 'r', 's', 't', 'u', 'w', 'x', 'y', 'z'];
   const targetIdx = alphabet.indexOf(targetLetter.toLowerCase());
   if (targetIdx === -1) return;
 
@@ -2481,13 +2481,15 @@ function handleInsertDirect(category, item) {
       return;
     }
 
-    // En Constructor Visual: Buscar primer espacio libre en builderAtomics
-    const emptyAtomic = AppState.builderAtomics.find(a => !a.text || !a.text.trim());
+    // En Constructor Visual: Buscar primer espacio libre o con placeholder en builderAtomics
+    const emptyAtomic = AppState.builderAtomics.find(a => !a.text || !a.text.trim() || a.text.startsWith('nueva proposición para '));
     if (emptyAtomic) {
       emptyAtomic.text = item.text;
       const input = document.getElementById(`atomic-input-${emptyAtomic.name}`);
       if (input) {
         input.value = item.text;
+      } else {
+        renderAtomicDefinitions();
       }
       triggerSuccessFeedback(document.getElementById('btn-open-atomic-builder-picker'));
       updateBuilderDisplay();
@@ -2495,8 +2497,8 @@ function handleInsertDirect(category, item) {
       return;
     }
 
-    // Si todas tienen texto, buscar la siguiente variable libre (p, q, r, s, t)
-    const alphabet = ['p', 'q', 'r', 's', 't'];
+    // Si todas tienen texto, buscar la siguiente variable libre
+    const alphabet = ['p', 'q', 'r', 's', 't', 'u', 'w', 'x', 'y', 'z'];
     const activeNames = AppState.builderAtomics.map(a => a.name);
     const nextLetter = alphabet.find(l => !activeNames.includes(l));
 
@@ -2507,7 +2509,7 @@ function handleInsertDirect(category, item) {
       triggerSuccessFeedback(document.getElementById('btn-open-atomic-builder-picker'));
       showToast(`Nueva variable ${nextLetter} agregada con: "${item.text}"`, 'success');
     } else {
-      // Si ya están las 5 ocupadas, actualizar la primera
+      // Si ya están todas ocupadas, actualizar la primera
       AppState.builderAtomics[0].text = item.text;
       const input = document.getElementById('atomic-input-p');
       if (input) {
