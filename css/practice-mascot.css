@@ -1311,23 +1311,45 @@
   opacity: 0.75;
 }
 
+/* Layout 2 por fila para el Panel de Administrador */
+.admin-parameters-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 960px) {
+  .admin-parameters-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-param-card {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0 !important;
+  height: 100%;
+}
+
 /* Cuadricula de gestion de minijuegos en el Panel de Administrador */
 .minigames-admin-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px;
-  margin-top: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
 }
 
 .minigame-admin-card {
   background: var(--bg-card);
   border: 2px solid var(--border-color);
   border-radius: var(--radius-lg, 12px);
-  padding: 16px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.08);
+  gap: 8px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.08);
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 

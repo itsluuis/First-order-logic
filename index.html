@@ -501,15 +501,19 @@
           <span class="badge badge-admin">Solo Administrador</span>
         </div>
 
-        <div style="max-width: 880px;">
-          <!-- Bloque de Notación Forzada -->
-          <div class="card card-subtle">
-            <h3 class="card-title" style="font-size: 1.05rem;">Política de Notación de Conectivos</h3>
-            <p class="card-subtitle" style="margin-bottom: 1.25rem;">
-              Puedes permitir que los usuarios elijan la notación libremente o bloquear la simbología para forzar una única notación en toda la plataforma.
-            </p>
+        <div class="admin-parameters-grid">
+          <!-- Bloque 1: Política de Notación Forzada -->
+          <div class="card card-subtle admin-param-card">
+            <div class="card-header" style="padding: 0; margin-bottom: 0.75rem;">
+              <div>
+                <h3 class="card-title" style="font-size: 1.05rem;">Política de Notación de Conectivos</h3>
+                <p class="card-subtitle" style="margin-bottom: 0;">
+                  Permite elegir la notación libremente o bloquea la simbología para forzar una única notación.
+                </p>
+              </div>
+            </div>
 
-            <div class="form-group">
+            <div class="form-group" style="margin-bottom: 1.25rem;">
               <label class="form-label">Simbología Permitida para los Usuarios:</label>
               <select id="admin-notation-lock-select" class="form-input">
                 <option value="none">Libre (El usuario puede elegir entre Estándar o Alternativa)</option>
@@ -518,13 +522,65 @@
               </select>
             </div>
 
-            <button id="btn-admin-save-notation" class="btn btn-primary">
-              Guardar Política de Notación
-            </button>
+            <div style="margin-top: auto;">
+              <button id="btn-admin-save-notation" class="btn btn-primary" style="width: 100%;">
+                Guardar Política de Notación
+              </button>
+            </div>
           </div>
 
-          <!-- Bloque de Disponibilidad del Centro de Prácticas -->
-          <div class="card card-subtle" style="margin-top: 1.5rem;">
+          <!-- Bloque 2: Gestión de Usuarios Registrados -->
+          <div class="card card-subtle admin-param-card">
+            <div class="card-header" style="padding: 0; margin-bottom: 0.75rem;">
+              <div>
+                <h3 class="card-title" style="font-size: 1.05rem;">Gestión de Usuarios Registrados</h3>
+                <p class="card-subtitle" style="margin-bottom: 0;">
+                  Selecciona un estudiante o profesor para eliminarlo. Borrar un profesor elimina sus secciones en cascada.
+                </p>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+              <label class="form-label" for="admin-user-select">Usuario a Eliminar:</label>
+              <select id="admin-user-select" class="form-input">
+                <option value="">-- Selecciona un usuario --</option>
+              </select>
+            </div>
+
+            <div style="margin-top: auto;">
+              <button type="button" id="btn-admin-delete-user" class="btn" style="width: 100%; background: var(--accent-rose); border: 1px solid var(--accent-rose); color: #fff; font-weight: 600;">
+                Eliminar Usuario Seleccionado
+              </button>
+            </div>
+          </div>
+
+          <!-- Bloque 3: Gestión de Secciones Académicas -->
+          <div class="card card-subtle admin-param-card">
+            <div class="card-header" style="padding: 0; margin-bottom: 0.75rem;">
+              <div>
+                <h3 class="card-title" style="font-size: 1.05rem;">Gestión de Secciones Académicas</h3>
+                <p class="card-subtitle" style="margin-bottom: 0;">
+                  Selecciona una sección activa para eliminarla junto con todas sus tareas asociadas.
+                </p>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+              <label class="form-label" for="admin-section-select">Sección a Eliminar:</label>
+              <select id="admin-section-select" class="form-input">
+                <option value="">-- Selecciona una sección --</option>
+              </select>
+            </div>
+
+            <div style="margin-top: auto;">
+              <button type="button" id="btn-admin-delete-section" class="btn" style="width: 100%; background: var(--accent-rose); border: 1px solid var(--accent-rose); color: #fff; font-weight: 600;">
+                Eliminar Sección Seleccionada
+              </button>
+            </div>
+          </div>
+
+          <!-- Bloque 4: Disponibilidad del Centro de Prácticas -->
+          <div class="card card-subtle admin-param-card">
             <div class="card-header" style="padding: 0; margin-bottom: 0.75rem;">
               <div>
                 <h3 class="card-title" style="font-size: 1.05rem;">Disponibilidad del Centro de Prácticas</h3>
@@ -536,44 +592,6 @@
             <div id="admin-minigames-container" class="minigames-admin-grid">
               <!-- Tarjetas inyectadas dinámicamente -->
             </div>
-          </div>
-
-          <!-- Bloque de Eliminación de Usuarios -->
-          <div class="card card-subtle" style="margin-top: 1.5rem;">
-            <h3 class="card-title" style="font-size: 1.05rem;">Gestión de Usuarios Registrados</h3>
-            <p class="card-subtitle" style="margin-bottom: 1.25rem;">
-              Selecciona un estudiante o profesor de la base de datos local para eliminarlo del sistema. Al eliminar un profesor, se eliminarán en cascada sus secciones creadas.
-            </p>
-
-            <div class="form-group">
-              <label class="form-label" for="admin-user-select">Usuario a Eliminar:</label>
-              <select id="admin-user-select" class="form-input">
-                <option value="">-- Selecciona un usuario --</option>
-              </select>
-            </div>
-
-            <button type="button" id="btn-admin-delete-user" class="btn" style="background: var(--accent-rose); border: 1px solid var(--accent-rose); color: #fff; font-weight: 600;">
-              Eliminar Usuario Seleccionado
-            </button>
-          </div>
-
-          <!-- Bloque de Eliminación de Secciones -->
-          <div class="card card-subtle" style="margin-top: 1.5rem;">
-            <h3 class="card-title" style="font-size: 1.05rem;">Gestión de Secciones Académicas</h3>
-            <p class="card-subtitle" style="margin-bottom: 1.25rem;">
-              Selecciona una sección activa para eliminarla junto con todas sus tareas asociadas de la base de datos local.
-            </p>
-
-            <div class="form-group">
-              <label class="form-label" for="admin-section-select">Sección a Eliminar:</label>
-              <select id="admin-section-select" class="form-input">
-                <option value="">-- Selecciona una sección --</option>
-              </select>
-            </div>
-
-            <button type="button" id="btn-admin-delete-section" class="btn" style="background: var(--accent-rose); border: 1px solid var(--accent-rose); color: #fff; font-weight: 600;">
-              Eliminar Sección Seleccionada
-            </button>
           </div>
         </div>
       </div>
