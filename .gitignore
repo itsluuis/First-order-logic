@@ -8,3 +8,8 @@ Thumbs.db
 *.tmp
 .cache/
 .agents/
+
+# Documentos internos y planes de desarrollo
+docs/plans/
+plans/
+

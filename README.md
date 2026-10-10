@@ -1,117 +1,207 @@
-# Software de Lógica Simbólica: Proposiciones Moleculares & FBF
+# First Order | Software de Lógica Simbólica & FBF (Versión Final 1.0)
 
-Aplicación web interactiva desarrollada para la cátedra de **Lógica Simbólica (Semestre 4 - Universidad José Antonio Páez)**. Permite construir proposiciones moleculares a partir de proposiciones atómicas y conectivos lógicos, obtener la **Fórmula Bien Formada (FBF)** correspondiente, realizar el **proceso inverso** determinista (de FBF a lenguaje natural), generar expresiones y proposiciones aleatorias de forma integrada, evaluar tablas de verdad completas, competir en un centro de prácticas gamificado con motor de Machine Learning local y contar con la tutoría de **Moli**, la mascota robótica OLED.
+[![JavaScript](https://img.shields.io/badge/JavaScript-ES6%2B-F7DF1E?logo=javascript&logoColor=black)](https://developer.mozilla.org/es/docs/Web/JavaScript)
+[![Tests](https://img.shields.io/badge/Tests-59%20Passing-brightgreen)](package.json)
+[![Zero Emojis](https://img.shields.io/badge/UI-Zero%20Emojis%20(100%25%20SVG)-4F46E5)](js/icons.js)
+[![Machine Learning](https://img.shields.io/badge/ML-Local%20Neural%20Net%20(MLP)-06B6D4)](js/ml/neuralNet.js)
+[![Security](https://img.shields.io/badge/Security-Strict%20CSP%20%26%20Sandboxed-10B981)](AGENTS.md)
+
+Aplicación web integral, modular y de alto rendimiento desarrollada para la cátedra de **Lógica Simbólica (Semestre 4 - Universidad José Antonio Páez)**. Proporciona una suite completa para construir proposiciones moleculares a partir de proposiciones atómicas y conectivos lógicos, obtener la **Fórmula Bien Formada (FBF)** correspondiente, ejecutar el **proceso inverso** determinista (de FBF a lenguaje natural), calcular tablas de verdad exhaustivas con desglose de todas las operaciones intermedias, gestionar elementos lógicos favoritos mediante popovers interactivos, administrar secciones académicas y competir en un centro de prácticas gamificado impulsado por un modelo de Machine Learning local junto a la tutoría interactiva de **Moli**, la mascota robótica OLED.
 
 ---
 
-## Características Principales
+## Características Principales (Versión Final 1.0)
 
-### 1. Perfiles de Acceso Simplificados y Seguros
-El sistema cuenta con 3 perfiles dedicados para evitar confusiones y garantizar la seguridad:
-- **Estudiante**: Acceso directo para práctica, construcción visual, proceso inverso, tablas de verdad y centro de desafíos.
-- **Profesor**: Acceso pedagógico completo con todas las herramientas analíticas.
-- **Administrador**: Requiere contraseña (`1234`). Posee acceso exclusivo a la pestaña de **Parámetros** para configurar políticas globales de la plataforma (ej. forzar una notación obligatoria).
-- **Protección de Navegación**: Al cerrar sesión desde la pestaña de parámetros, el sistema restablece automáticamente la vista activa al **Constructor Visual**, impidiendo accesos indebidos de perfiles no autorizados.
+### 1. Constructor Visual de Proposiciones Moleculares (Proceso Directo)
+- **Definición Dinámica de Variables Atómicas**: Permite asignar enunciados en lenguaje natural para variables proposicionales básicas ($p, q, r, s, t...$), añadir nuevas variables dinámicamente con badges visuales y limpiar textos individuales con un solo clic.
+- **Generación de Atómicas Aleatorias**: Genera automáticamente proposiciones atómicas coherentes en español ajustadas al número exacto de variables activas en pantalla.
+- **Ensamble Ergonómico de Tokens**: Lienzo interactivo con botones ergonómicos para insertar variables, negación ($\neg$), conjunción ($\land$), disyunción ($\lor$), condicional ($\to$), bicondicional ($\leftrightarrow$) y paréntesis balanceados.
+- **Generación de Moleculares Complejas**: Produce fórmulas moleculares aleatorias estructuradas y anidadas (ej. $s \to (\neg s \land ((p \lor t) \lor (t \land s)))$), cargando los tokens en el lienzo y actualizando su traducción en tiempo real.
+- **Traducción Simultánea Bidireccional**: Visualización en tiempo real tanto de la **Fórmula Bien Formada (FBF)** con paréntesis balanceados como de la **Proposición Molecular en Lenguaje Natural** en español.
 
-### 2. Constructor Visual de Proposiciones Moleculares (Proceso Directo)
-- **Definición de Proposiciones Atómicas**: Asigna enunciados en lenguaje natural para variables básicas ($p, q, r, s, t...$) y añade nuevas variables dinámicamente con limpieza rápida individual.
-- **Atómicas Aleatorias**: Genera enunciados coherentes en español considerando el número exacto de variables activas en pantalla.
-- **Ensamble Visual Interactivo**: Lienzo de tokens con botones ergonómicos para insertar variables, negación ($\neg$), conjunción ($\land$), disyunción ($\lor$), condicional ($\to$), bicondicional ($\leftrightarrow$) y paréntesis.
-- **Molecular Aleatoria**: Genera automáticamente proposiciones moleculares aleatorias complejas y anidadas (ej. $p \land (\neg s \to t)$ o $s \to (\neg s \land ((p \lor t) \lor (t \land s)))$), cargando los tokens en el lienzo y actualizando la traducción al instante.
-- **Limpieza Rápida**: Botón para limpiar todo el lienzo de la proposición de un solo clic, además de botones individuales para vaciar el texto de cualquier proposición atómica rápidamente.
-- **Visualización Simultánea**: Genera en tiempo real tanto la **Fórmula Bien Formada (FBF)** con paréntesis balanceados como la **Proposición Molecular en Lenguaje Natural** en español.
+### 2. Proceso Inverso Determinista (FBF a Lenguaje Natural)
+- **Ingreso Flexible de Fórmulas**: Admite el ingreso mediante teclado físico o teclado virtual auxiliar en pantalla.
+- **Generación de FBF Aleatoria**: Crea instantáneamente una FBF sintácticamente válida con paréntesis balanceados.
+- **Analizador Léxico y Sintáctico (AST)**: Identifica, tokeniza y extrae automáticamente todas las variables atómicas presentes ($p, q, r...$).
+- **Autocompletado de Enunciados**: Permite asignar enunciados aleatorios o personalizados a las variables detectadas manteniendo el principio de determinismo.
+- **Reconstrucción Semántica Automática**: Ensambla y formatea la proposición molecular en español respetando la precedencia formal de los operadores lógicos.
 
-### 3. Proceso Inverso Determinista (FBF a Proposiciones Moleculares)
-- Admite el ingreso o pegado de cualquier FBF mediante teclado físico o virtual auxiliar.
-- **Generar FBF Aleatoria**: Crea de inmediato una FBF sintácticamente válida con paréntesis balanceados y la analiza en pantalla.
-- **Analizador Léxico y Sintáctico (AST)**: Identifica y extrae las variables atómicas presentes ($p, q, r...$).
-- **Generar Atómicas Aleatorias**: Permite autocompletar enunciados para las variables detectadas con un solo clic, o bien escribirlos manualmente para mantener el principio de determinismo y predictibilidad.
-- **Reconstrucción Automática**: Ensambla y formatea la proposición molecular en español respetando la precedencia formal de operadores.
-
-### 4. Herramientas Pedagógicas de Análisis Lógico
+### 3. Motor de Análisis Lógico y "Todas las Operaciones Posibles"
 - **Tabla de Verdad Exhaustiva**:
-  - Calcula automáticamente todas las $2^n$ combinaciones de verdad.
-  - Muestra columnas intermedias de evaluación paso a paso para fórmulas de hasta 6 proposiciones atómicas. Cuando se operan más de 6 proposiciones, la tabla visual se sustituye por un aviso pedagógico indicando este límite, manteniendo siempre visible el cálculo del diagnóstico formal.
-  - Diagnóstico formal automático: **TAUTOLOGÍA**, **CONTRADICCIÓN** o **CONTINGENCIA**.
+  - Calcula automáticamente todas las $2^n$ combinaciones de valores de verdad.
+  - Genera columnas intermedias de evaluación paso a paso para fórmulas de hasta 6 proposiciones atómicas (con advertencia didáctica de límite computacional para $n > 6$, conservando el diagnóstico formal).
+  - Clasificación lógica automática: **TAUTOLOGÍA**, **CONTRADICCIÓN** o **CONTINGENCIA**.
+- **Cálculo Combinatorio de "Todas las Operaciones Posibles" (`allOperations.js`)**:
+  - Computa todas las combinaciones posibles de pares $C(N, 2)$ para las variables activas.
+  - Evalúa y desglosa las 5 operaciones lógicas fundamentales (conjunción, disyunción, condicional directo e inverso, bicondicional).
+  - Presenta tablas condensadas con clasificación lógica y traducción inmediata a lenguaje natural.
 - **Árbol Sintáctico Jerárquico**:
-  - Representación gráfica con ramas conectadas en CSS (`.tree`) que desglosa el conectivo principal en la raíz, los operadores secundarios y las proposiciones atómicas terminales.
-- **Doble Notación Lógica con Bloqueo de Administrador**:
+  - Representación gráfica con ramas conectadas en CSS (`.tree`) que desglosa visualmente el conectivo principal en la raíz, los operadores secundarios y las proposiciones atómicas terminales.
+- **Doble Notación Formal con Bloqueo de Administrador**:
   - **Notación Estándar**: $\neg, \land, \lor, \to, \leftrightarrow$
   - **Notación Alternativa**: $\sim, \&, \lor, \supset, \equiv$
-  - El administrador puede permitir libre elección o forzar una notación obligatoria desde la pestaña de Parámetros.
+  - El administrador puede permitir libre selección o forzar una notación obligatoria desde la pestaña de Parámetros.
 
-### 5. Centro de Prácticas Global (Gamificación con 4 Minijuegos)
-Pestaña interactiva con menú de tarjetas Bento/Glassmorphism con efectos de hover/zoom, selector de dificultades (Fácil, Normal, Difícil) y temporizador en tiempo real:
-- **Árbol Correcto:** Identifica la FBF generada por el árbol sintáctico jerárquico entre 4 opciones. Si fallas, la opción errónea se atenúa para permitir seguir deduciendo hasta acertar o expirar el tiempo. Tiempos: Fácil (2:00 min), Normal (1:30 min), Difícil (0:30 min).
-- **Moleculares:** Lee enunciados en lenguaje natural y construye la FBF utilizando una paleta interactiva de bloques y tokens. Tiempos: Fácil (5:00 min), Normal (2:30 min), Difícil (1:30 min).
-- **Veredicto:** Deduce a toda velocidad si la fórmula es Tautología, Contradicción o Contingencia. Acierto: +1 punto. Fallo: -1 punto (tope inferior en 0) y salta de inmediato a la siguiente. Tiempos: Fácil (2:00 min), Normal (1:30 min), Difícil (0:45 min).
-- **Duelo contra Moli (IA):** Compite contra Moli evaluando si una fórmula es Verdadera o Falsa bajo asignaciones atómicas dadas. La IA evalúa la fórmula en tiempo real, simula tiempo de reflexión y comete fallos controlados según la dificultad elegida. Tiempos: Fácil (2:00 min), Normal (1:30 min), Difícil (1:00 min).
-- **Mecanismos Anti-Spam y Variabilidad de Rondas:**
-  - Bloqueo inmediato al seleccionar respuesta para evitar sumas duplicadas de puntos.
-  - Pausa de cooldown visual (900 ms) entre ejercicios para diferenciar claramente cada ronda.
-  - Buffer de historial (`lastFBFs`) que garantiza no repetir fórmulas de las 2 rondas previas.
-  - Rotación obligatoria (`lastCorrectOptionIndex`): la opción correcta nunca se ubica en la misma posición de la ronda anterior.
-- **Pantalla de Resumen Final:** Desglose detallado de puntuación, precisión porcentual, comparativa contra la IA en Duelo y diagnósticos emitidos por la Red Neuronal.
+### 4. Biblioteca de Elementos Guardados & Popovers Flotantes (`savedItemsStorage.js`, `savedItemsPopover.js`)
+- **Persistencia Local por Usuario**: Permite guardar y recuperar elementos lógicos favoritos organizados en tres categorías:
+  - **Proposiciones Atómicas** (cuota: 15 elementos).
+  - **Fórmulas FBF** (cuota: 20 elementos).
+  - **Proposiciones Moleculares Completas** (cuota: 15 elementos).
+- **Popovers Ergonómicos Flotantes**:
+  - Interfaz emergente Glassmorphism con badges coloreados por variable, textos truncados accesibles mediante tooltip y botones de inserción rápida.
+  - Asignación inmediata al agregar nuevas variables sin perder el flujo de trabajo.
+  - Eliminación reactiva in situ (el elemento se remueve del popover sin recargar ni cerrarlo).
+- **Feedback Visual de Baja Invasión**: Efectos de flash sutiles de 1 segundo de duración aplicados únicamente al botón activador, evitando parpadeos de pantalla molestos.
 
-### 6. Mascota Robótica OLED ("Moli") & Tutor Inteligente
-- **Visor Robótico OLED (174px × 90px):** Diseño tipo pantalla/cápsula con ojos vectoriales SVG expresivos y luz de neón cian/esmeralda.
-- **Desplazamiento Fluido en Pantalla (Animación FLIP):** Al acceder al Centro de Prácticas o a la Pantalla de Resumen, Moli se desplaza suavemente en vuelo robótico (`cubic-bezier(0.25, 1.25, 0.5, 1)`) desde la esquina inferior derecha para acoplarse en la ranura dedicada (`#mascot-dock-slot`). Al salir o iniciar una partida, vuela de vuelta a su posición flotante.
-- **Máquina de Estados de Animaciones Ociosas (Idle State Machine):**
-  - **Pestañeo Natural:** Parpadeos simples y dobles espontáneos.
-  - **Mirada Curiosa (Vacilando):** Desplaza sus ojos a la izquierda, sostiene la mirada, la pasa a la derecha y regresa al centro.
-  - **Cara Escéptica / Inquisitiva:** Expresión asimétrica inspirada en el diseño de referencia (ojo izquierdo entrecerrado con ceja descendente y ojo derecho atento con ceja oblicua alzada en *smirk* analítico con leve inclinación del visor).
-  - **Modo Siesta ("zzz") y Despertar:** Ojos adormilados con letras luminosas `z z Z` flotantes que ascienden, culminando en un despertar sobresaltado (ojos abiertos de par en par con brinco elástico) antes de retomar el reposo alerta.
-- **Tutor Contextual con Auto-cierre de 4 Segundos:** Al hacer clic sobre Moli en cualquier pantalla, despliega un globo de diálogo que analiza didácticamente el contexto actual. El globo se auto-cierra con precisión tras **4 segundos exactos** y se posiciona inteligentemente sobre Moli tanto en modo flotante como cuando está acoplado.
+### 5. Gestión de Secciones Académicas y Roles Multiusuario Offline (`sectionsStorage.js`, `storage.js`)
+- **Base de Datos Local Embebida (100% Offline)**:
+  - **Estudiante**: Acceso rápido con Nombre y **PIN de 3 dígitos** (ej. `123`). Acceso a prácticas, construcción, inverso y tablas de verdad con aislamiento de estadísticas y modelo neuronal.
+  - **Profesor**: Acceso con Contraseña (&ge; 4 caracteres). Capacidades analíticas completas y gestión de secciones académicas para agrupar y supervisar alumnos.
+  - **Administrador**: Contraseña maestra fija (`1234`). Acceso a herramientas y exclusivo a la pestaña de **Parámetros**.
+- **Parámetros del Sistema en Grid Responsive de 2 por Fila**:
+  - Panel administrativo reorganizado en una cuadrícula ergonómica y adaptable de 2 columnas.
+  - Habilitación y bloqueo selectivo de minijuegos para estudiantes con guardado en tiempo real y banners de notificación informativos.
+  - Protección de navegación segura: al cerrar sesión desde la vista de parámetros, el sistema restablece automáticamente la vista activa al Constructor Visual.
 
-### 7. Motor de Machine Learning (Red Neuronal Perceptrón Multicapa)
-- **Implementación Local Nativa (`ml/neuralNet.js`):** Red Neuronal Multicapa (MLP) construida enteramente en JavaScript moderno vanilla, sin librerías externas ni dependencias de red.
-- **Modelado Cognitivo del Estudiante (`ml/studentModel.js`):**
-  - Evalúa y registra el desempeño del estudiante por conectivo lógico individual ($\neg, \land, \lor, \to, \leftrightarrow$).
-  - Calcula tiempos de respuesta y tasas de error.
-  - Calibra dinámicamente la velocidad y comportamiento de Moli en el modo Duelo.
-  - Emite sugerencias y diagnósticos pedagógicos personalizados en el Lobby y en el Resumen final.
+### 6. Mascota Robótica OLED ("Moli") & Tutor Contextual
+- **Visor Robótico OLED (174px × 90px)**: Pantalla de contorno cápsula con ojos vectoriales SVG expresivos y luz de neón cian/esmeralda.
+- **Seguimiento Dinámico del Cursor (Mouse Tracking)**: Los ojos de Moli siguen el movimiento del puntero del mouse en tiempo real durante los minijuegos de razonamiento lógico (`mousemove`), manteniéndose dentro de límites elásticos de seguridad calculados geométricamente.
+- **Animación de Vuelo FLIP**: Moli se desplaza suavemente en vuelo robótico (`cubic-bezier(0.25, 1.25, 0.5, 1)`) desde su posición flotante inferior derecha para acoplarse en la ranura dedicada (`#mascot-dock-slot`) al ingresar al Centro de Prácticas o Resumen, y retorna automáticamente al salir.
+- **Mensajería Reactiva en Secciones**: Analiza el avance del estudiante o profesor en la pestaña de Secciones, ofreciendo felicitaciones por tareas concluidas, explicaciones didácticas o recordatorios contextuales.
+- **Diálogo Contextual con Auto-Cierre de 4 Segundos**: Al hacer clic en Moli, despliega un globo didáctico adaptado a la pantalla actual que se cierra automáticamente tras **4 segundos exactos**.
+- **Máquina de Estados de Animación Ociosa (Idle State Machine)**: Pestañeos espontáneos, mirada curiosa hacia los lados, expresión escéptica con ceja alzada (*smirk* analítico) y modo siesta (*zzz*) con letras flotantes y despertar sobresaltado.
 
-### 8. Diseño e Identidad Visual 100% Libre de Emojis
-- Se sustituyeron todos los emojis por un catálogo integral de iconos vectoriales SVG limpios, técnicos y modernos (`js/icons.js`).
-- Estética Glassmorphism refinada, tipografía técnica, transiciones suaves y microinteracciones de nivel profesional.
+### 7. Centro de Prácticas Gamificado (4 Minijuegos con Machine Learning)
+- **Minijuegos Calibrados por Dificultad (Fácil, Normal, Difícil)**:
+  - **Árbol Correcto**: Identifica la FBF generada por el árbol sintáctico jerárquico entre 4 opciones. Las opciones erróneas se atenúan para permitir deducción continua.
+  - **Moleculares**: Construcción guiada de la FBF a partir del enunciado en lenguaje natural mediante una paleta de tokens y bloques.
+  - **Veredicto**: Deduce a contrarreloj si una fórmula es Tautología, Contradicción o Contingencia con bonificación de puntos y penalización controlada.
+  - **Duelo contra Moli (IA)**: Batalla en tiempo real evaluando fórmulas bajo asignaciones atómicas dadas. La IA simula tiempo de reflexión y comete fallos controlados según la dificultad elegida.
+- **Mecanismos Anti-Spam y Variabilidad de Rondas**:
+  - Bloqueo inmediato al pulsar una opción para impedir duplicación de puntaje.
+  - Pausa de enfriamiento (*cooldown*) visual de 900 ms entre ejercicios.
+  - Buffer de historial (`lastFBFs`) que garantiza no repetir fórmulas en las 2 rondas previas.
+  - Rotación obligatoria de la opción correcta (`lastCorrectOptionIndex`).
+- **Motor de Machine Learning (Red Neuronal Multicapa MLP en JS Nativo)**:
+  - Implementación de un Perceptrón Multicapa nativo en `js/ml/neuralNet.js` sin frameworks externos.
+  - Modelado cognitivo continuo en `js/ml/studentModel.js` que registra desempeño, tasas de error y tiempos de respuesta por conectivo ($\neg, \land, \lor, \to, \leftrightarrow$).
+  - Calibración adaptativa del comportamiento de Moli en modo Duelo y generación de diagnósticos pedagógicos en el resumen final.
+
+### 8. Identidad Visual 100% Libre de Emojis
+- Sustitución integral de emojis por una biblioteca técnica y uniforme de iconos vectoriales SVG limpios (`js/icons.js`).
+- Modales personalizados de confirmación y advertencia en sustitución de las funciones nativas bloqueantes (`window.confirm`).
 
 ---
 
-## Arquitectura de Software
+## Arquitectura de Seguridad, Sandboxing y Privacidad
+
+El proyecto está diseñado bajo el principio de **Privacidad por Diseño** (*Privacy by Design*) y **Aislamiento Local Estricto**:
+
+```
++-------------------------------------------------------------------------+
+|                          NAVEGADOR CLIENTE                              |
+|                                                                         |
+|  +-------------------------------------------------------------------+  |
+|  |                 Content Security Policy (CSP)                     |  |
+|  |  - default-src 'self'                                             |  |
+|  |  - connect-src 'none' (CERO llamadas de red / CERO telemetría)    |  |
+|  |  - object-src 'none'  (Bloqueo de plugins/Flash/Applets)          |  |
+|  |  - base-uri 'self'; form-action 'self'                            |  |
+|  +-------------------------------------------------------------------+  |
+|                                                                         |
+|  +---------------------------+       +-------------------------------+  |
+|  | Sanitización DOM          |       | Sandboxing LocalStorage       |  |
+|  | - escapeHtml() preventivo |       | - Cuotas estrictas por perfil |  |
+|  | - Cero eval() / Function()|       | - Aislamiento multiusuario    |  |
+|  +---------------------------+       +-------------------------------+  |
++-------------------------------------------------------------------------+
+                                     |
+                       [SIN ACCESO AL DISPOSITIVO]
+                                     x
++-------------------------------------------------------------------------+
+|                  HOST / SISTEMA OPERATIVO / ARCHIVOS                    |
+|  - Directorio del usuario (%USERPROFILE% / ~/.ssh / ~/.aws) PROTEGIDO   |
+|  - Cero ejecución de comandos de terminal arbitrarios                   |
+|  - Cero inyección de malware / Cero descarga de ejecutables             |
+|  - Documentos internos de desarrollo (docs/plans/) ocultos en .gitignore|
++-------------------------------------------------------------------------+
+```
+
+1. **Cero Conexiones Salientes & Cero Telemetría (`connect-src 'none'`)**: La aplicación funciona en un entorno estanco sin enviar ni recibir datos de servidores externos.
+2. **Protección contra Malware e Inyección de Código**:
+   - Se prohíbe el uso de `eval()` y constructores de funciones dinámicas en la evaluación lógica.
+   - Todo dato ingresado por el usuario se escapa antes de renderizarse en el DOM.
+3. **Guardrails de Ejecución para Agentes y Desarrolladores (`AGENTS.md`)**:
+   - Prohibición estricta de acceso a archivos del sistema fuera del repositorio.
+   - Prohibición de ejecución de scripts o binarios no autorizados.
+4. **Protección de Archivos Sensibles**:
+   - Los planes y especificaciones internas de desarrollo (`docs/plans/`) están estrictamente ignorados en `.gitignore` y desvinculados del árbol de control de versiones.
+
+---
+
+## Estructura de Software
 
 ```
 proposiciones moleculares/
-├── index.html                   # Interfaz semántica principal y modales
-├── README.md                    # Documentación general del proyecto
+├── index.html                   # Interfaz semántica principal, modales y visor de Moli
+├── README.md                    # Documentación técnica completa del proyecto
+├── AGENTS.md                    # Guardrails de seguridad, sandboxing y políticas del agente
+├── package.json                 # Configuración del paquete y script de pruebas nativo
+├── favicon.svg                  # Icono de la aplicación
+├── .gitignore                   # Exclusión de dependencias, temporales y planes internos
 ├── css/
-│   ├── style.css                # Estilos globales, diseño del sistema y árbol sintáctico (.tree)
+│   ├── style.css                # Estilos globales, diseño del sistema, popovers y árbol (.tree)
 │   └── practice-mascot.css      # Estilos del Centro de Prácticas, animaciones OLED y Moli
 ├── js/
 │   ├── app.js                   # Controlador principal, navegación segura y coordinación
-│   ├── icons.js                 # Biblioteca de iconos vectoriales SVG
-│   ├── storage.js               # Capa de persistencia local, base de datos de usuarios y perfiles
+│   ├── icons.js                 # Biblioteca de iconos vectoriales SVG (política Cero Emojis)
+│   ├── storage.js               # Persistencia de usuarios, sesiones y configuraciones
+│   ├── savedItemsStorage.js     # Persistencia local y cuotas de elementos guardados
+│   ├── savedItemsPopover.js     # Componente visual flotante de elementos lógicos favoritos
+│   ├── sectionsStorage.js       # Gestión de secciones académicas y asignación de alumnos
+│   ├── feedbackEffects.js       # Efectos de retroalimentación visual y microinteracciones
 │   ├── logic/
-│   │   ├── ast.js               # Tokenizador, parser formal y árbol sintáctico (AST)
-│   │   ├── generators.js        # Generadores deterministas de fórmulas y atómicas
-│   │   ├── naturalLanguage.js   # Traductor determinista AST <-> lenguaje natural
-│   │   └── truthTable.js        # Motor evaluador de tablas de verdad y clasificador
+│   │   ├── allOperations.js     # Motor de cálculo exhaustivo de todas las operaciones posibles
+│   │   ├── ast.js               # Tokenizador formal, parser recursivo y árbol sintáctico (AST)
+│   │   ├── generators.js        # Generadores deterministas de fórmulas y proposiciones atómicas
+│   │   ├── naturalLanguage.js   # Traductor determinista AST <-> lenguaje natural en español
+│   │   └── truthTable.js        # Motor evaluador de tablas de verdad y clasificador formal
 │   ├── mascot/
-│   │   ├── mascotController.js  # Coordinador pedagógico y estados de Moli
-│   │   └── mascotView.js        # Renderizado SVG del visor OLED, vuelo FLIP y animaciones
+│   │   ├── mascotController.js  # Coordinador pedagógico, estados ociosos y reactividad de Moli
+│   │   └── mascotView.js        # Renderizado SVG del visor OLED, seguimiento ocular y vuelo FLIP
 │   ├── ml/
-│   │   ├── neuralNet.js         # Red Neuronal Artificial (MLP) en JS nativo
-│   │   └── studentModel.js      # Extractor de métricas y generador de recomendaciones
+│   │   ├── neuralNet.js         # Red Neuronal Artificial (Perceptrón Multicapa) en JS nativo
+│   │   └── studentModel.js      # Extractor de métricas cognitivas y diagnósticos pedagógicos
 │   └── practice/
-│       ├── practiceEngine.js    # Motor lógico de los 4 minijuegos, cooldowns y anti-spam
-│       └── practiceView.js      # Renderizado de arenas de juego, lobby y resumen
+│       ├── practiceEngine.js    # Motor de los 4 minijuegos, cooldowns, anti-spam y rotaciones
+│       └── practiceView.js      # Renderizado de arenas de juego, lobby, duelos y resumen
+├── tests/
+│   ├── allOperations.test.js    # Pruebas del motor combinatorio de todas las operaciones
+│   ├── authState.test.js        # Pruebas de validación de formularios y roles
+│   ├── gameAvailability.test.js# Pruebas de configuración y bloqueo de minijuegos por Admin
+│   ├── mascotReactivity.test.js # Pruebas de mensajes reactivos y felicitaciones de Moli
+│   ├── mascotTracking.test.js   # Pruebas de seguimiento ocular del visor OLED
+│   ├── savedItems.test.js       # Pruebas de persistencia, cuotas y popovers de elementos
+│   ├── savedItemsIntegration.test.js # Pruebas de integración visual y feedback flash
+│   ├── sectionsAuth.test.js     # Pruebas de secciones académicas y cascada de borrado
+│   └── zeroEmojis.test.js       # Verificación estricta de la política Cero Emojis
 └── docs/
-    ├── SPEC_AUTH_LOCAL_DB.md    # Especificación de base de datos local y login offline
-    └── SPEC_PRACTICAS_Y_ML.md   # Especificación técnica detallada del sistema
+    ├── SPEC_ADMIN_JUEGOS_Y_MOLI_INTERACTIVO.md
+    ├── SPEC_AUTH_LOCAL_DB.md
+    ├── SPEC_DISENO_FULLWIDTH_DOCK_MINIMAL.md
+    ├── SPEC_DISENO_NEOPOP_DUOLINGO.md
+    ├── SPEC_PERSISTENCIA_ELEMENTOS_LOGICOS.md
+    ├── SPEC_PRACTICAS_Y_ML.md
+    ├── SPEC_SECCIONES_Y_ADMIN.md
+    └── SPEC_TODAS_LAS_OPERACIONES.md
 ```
 
-### Diagrama de Flujo del Sistema (Workflows & Architecture)
+---
+
+## Diagrama de Flujo del Sistema (Workflows & Architecture)
 
 ```mermaid
+%% Generated by https://gitdiagram.com/itsluuis/first-order-logic
 flowchart TD
 
 subgraph group_app["Application workflows"]
@@ -201,37 +291,60 @@ class node_profiles,node_student toneIndigo
 
 ---
 
-## Instrucciones de Uso y Ejecución
+## Pila Tecnológica (Tech Stack)
 
-### Opción 1: Ejecución Directa en el Navegador
-Abre directamente el archivo `index.html` en cualquier navegador web moderno (Google Chrome, Mozilla Firefox, Microsoft Edge, Safari, Brave).
+- **Núcleo de Lenguaje**: JavaScript Vanilla (ES6+ Modules, programación orientada a objetos y funcional sin transpiladores).
+- **Estructura y Maquetación**: HTML5 semántico con directivas de accesibilidad, atributos `aria-*` y etiquetas meta de seguridad CSP.
+- **Estilos y Diseño Visual**: CSS3 nativo con variables personalizadas, Glassmorphism, efectos de brillo ambiental, flexbox, CSS Grid y animaciones de vuelo FLIP.
+- **Inteligencia Artificial y Machine Learning**: Red Neuronal Artificial local (Perceptrón Multicapa) con propagación hacia adelante (*feedforward*), cálculo de error cuadrático medio y ajuste de pesos sin dependencias de red.
+- **Iconografía Técnica**: Catálogo vectorial SVG inline y reutilizable (`js/icons.js`).
+- **Almacenamiento Local**: `Window.localStorage` con serialización JSON sanitizada, gestión de perfiles y cuotas estrictas de almacenamiento.
+- **Suite de Pruebas**: Node.js Test Runner nativo (`node --test`), con 59 especificaciones automatizadas.
 
-### Opción 2: Servidor Local
-Para una experiencia óptima con módulos ES6:
+---
+
+## Instrucciones de Instalación y Ejecución
+
+### Opción 1: Ejecución Directa en el Navegador (Sin dependencias)
+Dado que la aplicación está construida con tecnologías web estándar y funciona de manera 100% local:
+1. Clona el repositorio o descarga el código fuente:
+   ```bash
+   git clone https://github.com/itsluuis/First-order-logic.git
+   cd First-order-logic
+   ```
+2. Abre directamente el archivo `index.html` con cualquier navegador web moderno (Google Chrome, Mozilla Firefox, Microsoft Edge, Safari, Brave, Opera).
+
+### Opción 2: Servidor Local de Desarrollo
+Para una experiencia óptima con módulos ES6 y caché de navegador:
 ```bash
-# Con Python
-python -m http.server 8080
-
-# O con Node.js (npx)
+# Con Node.js (npx)
 npx serve .
+
+# O con Python 3
+python -m http.server 8080
 ```
-Luego navega a `http://localhost:8080` en tu explorador.
+Luego accede a `http://localhost:8080` en tu navegador.
+
+### Opción 3: Ejecución de la Suite de Pruebas Automatizadas
+El proyecto incluye 59 pruebas que validan motores lógicos, autenticación, cuotas de guardado, animaciones y políticas de seguridad:
+```bash
+npm test
+```
 
 ---
 
-## Credenciales y Autenticación Multiusuario Local (Offline)
+## Credenciales y Roles de Acceso
 
-El sistema cuenta con una base de datos local embebida en el navegador (100% funcional sin conexión a internet) para registro e inicio de sesión:
-
-| Perfil | Autenticación | Privilegios y Características |
+| Perfil | Credencial de Acceso | Privilegios y Herramientas |
 | :--- | :--- | :--- |
-| **Estudiante** | Nombre + **PIN de 3 dígitos** (ej. `123`) | Constructor visual, proceso inverso, tablas de verdad, centro de prácticas y duelos contra Moli con aislamiento estricto de estadísticas y modelo neuronal de IA. |
-| **Profesor** | Nombre + **Contraseña** (&ge; 4 caracteres) | Todas las herramientas pedagógicas y analíticas del estudiante, preparado para gestionar secciones futuras. |
-| **Administrador** | Contraseña fija (`1234`) | Acceso a herramientas lógicas y exclusivo a la pestaña de **Parámetros** para fijar políticas globales de notación. |
+| **Estudiante** | Nombre de usuario + **PIN de 3 dígitos** (ej. `123`) | Constructor visual, proceso inverso, tablas de verdad, minijuegos y duelos contra Moli con aislamiento total de estadísticas y progreso. |
+| **Profesor** | Nombre de usuario + **Contraseña** (&ge; 4 caracteres) | Acceso pedagógico completo, consulta analítica y gestión de secciones de clase para asignación y seguimiento de alumnos. |
+| **Administrador** | Contraseña maestra fija (`1234`) | Acceso exclusivo a la pestaña de **Parámetros** en grid de 2 por fila para fijar notación lógica obligatoria y bloquear o habilitar minijuegos. |
 
 ---
 
-## Autor
+## Autoría y Créditos
 
-- **Luis Carlos** ([@itsluuis](https://github.com/itsluuis))
-- Cátedra de Lógica Simbólica - Universidad José Antonio Páez
+- **Desarrollador Principal**: **Luis Carlos** ([@itsluuis](https://github.com/itsluuis))
+- **Institución**: Cátedra de Lógica Simbólica - **Universidad José Antonio Páez** (Semestre 4).
+- **Licencia**: Proyecto académico de código abierto bajo licencia MIT.
