@@ -123,7 +123,7 @@ El proyecto está diseñado bajo el principio de **Privacidad por Diseño** (*Pr
 |  - Directorio del usuario (%USERPROFILE% / ~/.ssh / ~/.aws) PROTEGIDO   |
 |  - Cero ejecución de comandos de terminal arbitrarios                   |
 |  - Cero inyección de malware / Cero descarga de ejecutables             |
-|  - Documentos internos de desarrollo (docs/plans/) ocultos en .gitignore|
+|  - Documentos internos, notas y especificaciones personales (docs/) ocultos en .gitignore|
 +-------------------------------------------------------------------------+
 ```
 
@@ -134,8 +134,8 @@ El proyecto está diseñado bajo el principio de **Privacidad por Diseño** (*Pr
 3. **Guardrails de Ejecución para Agentes y Desarrolladores (`AGENTS.md`)**:
    - Prohibición estricta de acceso a archivos del sistema fuera del repositorio.
    - Prohibición de ejecución de scripts o binarios no autorizados.
-4. **Protección de Archivos Sensibles**:
-   - Los planes y especificaciones internas de desarrollo (`docs/plans/`) están estrictamente ignorados en `.gitignore` y desvinculados del árbol de control de versiones.
+4. **Protección de Archivos Sensibles y Privacidad**:
+   - Las notas de diseño, especificaciones internas y documentos de desarrollo (`docs/`) están estrictamente ignorados en `.gitignore` y desvinculados del árbol de control de versiones público para resguardar la privacidad intelectual del autor.
 
 ---
 
@@ -148,7 +148,7 @@ proposiciones moleculares/
 ├── AGENTS.md                    # Guardrails de seguridad, sandboxing y políticas del agente
 ├── package.json                 # Configuración del paquete y script de pruebas nativo
 ├── favicon.svg                  # Icono de la aplicación
-├── .gitignore                   # Exclusión de dependencias, temporales y planes internos
+├── .gitignore                   # Exclusión de dependencias, temporales y documentación interna
 ├── css/
 │   ├── style.css                # Estilos globales, diseño del sistema, popovers y árbol (.tree)
 │   └── practice-mascot.css      # Estilos del Centro de Prácticas, animaciones OLED y Moli
@@ -175,25 +175,16 @@ proposiciones moleculares/
 │   └── practice/
 │       ├── practiceEngine.js    # Motor de los 4 minijuegos, cooldowns, anti-spam y rotaciones
 │       └── practiceView.js      # Renderizado de arenas de juego, lobby, duelos y resumen
-├── tests/
-│   ├── allOperations.test.js    # Pruebas del motor combinatorio de todas las operaciones
-│   ├── authState.test.js        # Pruebas de validación de formularios y roles
-│   ├── gameAvailability.test.js# Pruebas de configuración y bloqueo de minijuegos por Admin
-│   ├── mascotReactivity.test.js # Pruebas de mensajes reactivos y felicitaciones de Moli
-│   ├── mascotTracking.test.js   # Pruebas de seguimiento ocular del visor OLED
-│   ├── savedItems.test.js       # Pruebas de persistencia, cuotas y popovers de elementos
-│   ├── savedItemsIntegration.test.js # Pruebas de integración visual y feedback flash
-│   ├── sectionsAuth.test.js     # Pruebas de secciones académicas y cascada de borrado
-│   └── zeroEmojis.test.js       # Verificación estricta de la política Cero Emojis
-└── docs/
-    ├── SPEC_ADMIN_JUEGOS_Y_MOLI_INTERACTIVO.md
-    ├── SPEC_AUTH_LOCAL_DB.md
-    ├── SPEC_DISENO_FULLWIDTH_DOCK_MINIMAL.md
-    ├── SPEC_DISENO_NEOPOP_DUOLINGO.md
-    ├── SPEC_PERSISTENCIA_ELEMENTOS_LOGICOS.md
-    ├── SPEC_PRACTICAS_Y_ML.md
-    ├── SPEC_SECCIONES_Y_ADMIN.md
-    └── SPEC_TODAS_LAS_OPERACIONES.md
+└── tests/
+    ├── allOperations.test.js    # Pruebas del motor combinatorio de todas las operaciones
+    ├── authState.test.js        # Pruebas de validación de formularios y roles
+    ├── gameAvailability.test.js # Pruebas de configuración y bloqueo de minijuegos por Admin
+    ├── mascotReactivity.test.js # Pruebas de mensajes reactivos y felicitaciones de Moli
+    ├── mascotTracking.test.js   # Pruebas de seguimiento ocular del visor OLED
+    ├── savedItems.test.js       # Pruebas de persistencia, cuotas y popovers de elementos
+    ├── savedItemsIntegration.test.js # Pruebas de integración visual y feedback flash
+    ├── sectionsAuth.test.js     # Pruebas de secciones académicas y cascada de borrado
+    └── zeroEmojis.test.js       # Verificación estricta de la política Cero Emojis
 ```
 
 ---

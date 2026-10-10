@@ -9,7 +9,7 @@ Thumbs.db
 .cache/
 .agents/
 
-# Documentos internos y planes de desarrollo
-docs/plans/
+# Documentos internos, especificaciones y notas personales
+docs/
 plans/
 
